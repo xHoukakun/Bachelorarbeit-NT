@@ -16,9 +16,9 @@ namespace Bachelorarbeit_NT
         public Starter(int workerNum)
         {
 
-            Channel<Coordinate> jobChannel = Channel.CreateBounded<Coordinate>(2^32);  //erstelle den Job Queue
-            Channel<Result> resultChannel = Channel.CreateBounded<Result>(2^32);   //erstelle die result queue
-                                                                                 
+            Channel<Coordinate> jobChannel = Channel.CreateBounded<Coordinate>(33554432);  //erstelle den Job Queue
+            Channel<Result> resultChannel = Channel.CreateBounded<Result>(33554432) ;   //erstelle die result queue
+                                                                             
             CancellationTokenSource ctsrc = new CancellationTokenSource();
 
             var Ausgabe = new Thread(() => DbWorker(resultChannel, "connection", ctsrc.Token));// lampda ausdruck um den thread zu initialisieren.
