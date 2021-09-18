@@ -8,10 +8,17 @@ namespace Bachelorarbeit_NT
 {
     public class Coordinate
     {
+
+        //Beachte t ist eine Referenz auf ein Objekt. C# ist Objektorientiert, t gibt also eine Referenz auf eine Klasse zurück.
         private Term t { get; set; }
         public decimal x = 1;
         public decimal y = 1;
-
+        /// <summary>
+        /// Konstruktor der Coordinate Klasse
+        /// </summary>
+        /// <param name="_t">Referenz auf den Term</param>
+        /// <param name="_x">x coordinate</param>
+        /// <param name="_y">y Coordinate</param>
         public Coordinate(Term _t, decimal _x, decimal _y)
         {
             y = _y;
@@ -21,7 +28,7 @@ namespace Bachelorarbeit_NT
 
 
         /// <summary>
-        /// 
+        /// Ich gebe per Selbstreferenz Variablen zurück 
         /// </summary>
         /// <returns>quadratic form of coordinate</returns>
         public decimal Calc()

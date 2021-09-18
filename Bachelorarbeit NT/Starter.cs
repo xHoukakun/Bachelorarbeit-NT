@@ -9,32 +9,34 @@ using System.Data.SQLite;
 using System.IO;
 
 namespace Bachelorarbeit_NT
-{
+{/// <summary>
+/// die Starter Klasse kümmert sich um organisation der Form wie alles berechnet werden soll. Es wurde sehr viel Abstrahiert. 
+/// </summary>
     public class Starter
     {
-        public List<Thread> worker = new List<Thread>();
+        public List<Thread> worker = new List<Thread>(); //Ich erstelle eine Liste von Threads die Aktiv sind.
         public Starter(int workerNum)
         {
 
             Channel<Coordinate> jobChannel = Channel.CreateBounded<Coordinate>(33554432);  //erstelle den Job Queue
             Channel<Result> resultChannel = Channel.CreateBounded<Result>(33554432) ;   //erstelle die result queue
                                                                              
-            CancellationTokenSource ctsrc = new CancellationTokenSource();
+            CancellationTokenSource ctsrc = new CancellationTokenSource();   //der CancellationToken.
 
-            var Ausgabe = new Thread(() => DbWorker(resultChannel, "connection", ctsrc.Token));// lampda ausdruck um den thread zu initialisieren.
-            Ausgabe.Start();
+            var Ausgabe = new Thread(() => DbWorker(resultChannel, "connection", ctsrc.Token));// lambda ausdruck um den thread zu initialisieren.
+            Ausgabe.Start();   
             worker.Add(Ausgabe);
 
             for (int i = 0; i < workerNum; i++)
             {
-                var trh = new Thread(() => Worker(jobChannel, resultChannel, ctsrc.Token));
-                trh.Start();
-                worker.Add(trh);
+                var trh = new Thread(() => Worker(jobChannel, resultChannel, ctsrc.Token)); //hier werden Worker erstellt mittels lambda ausdruck man braucht hier eine Anonyme Funktion der man diese Parameter übergibt
+                trh.Start();                                                                    //beispiel für einen "verständlicheren" Lambda findet man unten
+                worker.Add(trh);                                                                //ich kenne den Worker ja sogesehen nicht. Der bekommt erst später einen genauen Typen.
             }
 
-            var asdfasfd = new Thread(() => JobProducer(Term.TermType.QuadraticTwo, jobChannel, 1, 10000000000000000000)); //hier startet der Job Producer
-            asdfasfd.Start();
-            worker.Add(asdfasfd);
+            var JobProd = new Thread(() => JobProducer(Term.TermType.QuadraticTwo, jobChannel, 1, 10000000000000000000)); //hier startet der Job Producer
+            JobProd.Start();
+            worker.Add(JobProd);
         }
 
         public async void Worker(ChannelReader<Coordinate> jobChan, ChannelWriter<Result> resultChan, CancellationToken cToken)
@@ -62,10 +64,16 @@ namespace Bachelorarbeit_NT
         public async void JobProducer(Term.TermType typ, ChannelWriter<Coordinate> jobChan, decimal start, decimal ende)
         {
             Term t = null;  //standart wert des Typen (Welches alpha soll berechnet werden
-            switch (typ)
+            switch (typ) //switch case für den Typen Man muss den Workern ja den Typ der Rechnung übergeben
             {
                 case Term.TermType.QuadraticTwo:
                     t = new RootOfTwo();
+                    break;
+                case Term.TermType.Zeta3:
+                    t = new Zeta3();
+                    break;
+                case Term.TermType.Euler:
+                    t = new Euler();
                     break;
                 default: throw new ArgumentException();
             }
@@ -90,7 +98,7 @@ namespace Bachelorarbeit_NT
 
             //jobChan.Complete();  //wenn die Jobs fertig geladen wurden. funktioniert der JobChan.Complete wirklich so? Bei mir sieht es nach einer Löschung des Channels aus....
         }
-        public class Result
+        public class Result  //hier wird ein Result datentyp definiert der besteht aus dem result der rechnung und dem "term" der rechnung da der term nur von Alpha abhängt gebe ich Alpha zurück
         {
             public string type;
             public decimal result;
@@ -103,7 +111,7 @@ namespace Bachelorarbeit_NT
 
         public async void DbWorker(ChannelReader<Result> resultChan, string connectionString, CancellationToken cToken) //Das ist der DB worker der schreibt alles  in die Datenbank
         {
-            StringBuilder connectDB1 = new StringBuilder(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)); //Ich erfahre wo die datenbank liegt.
+            StringBuilder connectDB1 = new StringBuilder(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)); //man erfährt wo die DB liegt. Insbesondere sorgen die Nächsten Zeilen code für die DB
             connectDB1.Remove(connectDB1.Length - 5, 5);
             connectDB1.Append("Values.db");        //Datenbank heißt Values;
             StringBuilder hilfsstring = new StringBuilder(@"URI=file:");
@@ -113,9 +121,9 @@ namespace Bachelorarbeit_NT
             Create_Database(connectDB);
          
             using (var connection = new SQLiteConnection(connectDB))
-            {
-                while (await resultChan.WaitToReadAsync())
-                {
+            { //warte bis etwas in dem Channel ist
+                while (await resultChan.WaitToReadAsync())    //diese beiden While Schleifen sorgen insbesondere dafür, dass es async ist.  Und man kein Deadlock szenario bekomm ( Auch bekannt als Philosophen Problem)
+                { //versuche es rauszulesen
                     while (resultChan.TryRead(out var jobItem))
                     {
                         // if(jobItem.type)
@@ -165,7 +173,7 @@ namespace Bachelorarbeit_NT
                 cmd.CommandText = "DROP TABLE IF EXISTS Zeta3";
                 cmd.ExecuteNonQuery();
                 
-
+                //SQL befehle für das ERstellen der Datenbank
                 cmd.CommandText = @"CREATE TABLE Wurzel2 (
 
                     ID    INTEGER NOT NULL UNIQUE,
@@ -191,6 +199,9 @@ namespace Bachelorarbeit_NT
                 )";
                 cmd.ExecuteNonQuery();
                 //Hier werden nun Indexe auf die Values gesetzt damit man einfacher drauf zugreifen kann ( Sortierung)
+                //Dies hat einen sehr großen Einfluss auf die Laufzeit des Programmes. 
+                //Da ich nicht weiß in welcher Reihenfolge die Werte rein geschrieben werden 
+                //Sorge ich nachher mit Select befehl das die sehr schnell aufsteigend sortiert werden
                 cmd.CommandText= @"CREATE INDEX Sortiert_Euler ON Eulersche_Zahl(
                     Value ASC
                     )";
@@ -211,3 +222,8 @@ namespace Bachelorarbeit_NT
 
     }
 }
+//beispiel für Lambda:
+//System.Linq.Expressions.Expression<Func<int, int>> e = x => x * x;
+//Console.WriteLine(e);
+//// Output:
+//// x => (x * x)

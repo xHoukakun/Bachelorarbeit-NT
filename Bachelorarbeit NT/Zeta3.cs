@@ -5,15 +5,15 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Bachelorarbeit_NT
-{/// <summary>
-/// Implementation der Quadratischen Form für wurzel 2
-/// </summary>
-    public class RootOfTwo : Term
+{
+    public class Zeta3 : Term
     {
-
-        public RootOfTwo()
+        /// <summary>
+        /// Implementation für alpha gleich zeta(3)
+        /// </summary>
+        public Zeta3()
         {
-            alpha = Convert.ToDecimal(Math.Sqrt(2));
+            alpha = 1.2020569031595942853997381615114499907649862923404988817922715553M;
         }
 
         public override decimal CalcQuadratic(Coordinate c)
@@ -22,7 +22,7 @@ namespace Bachelorarbeit_NT
         }
         public override string Alpha(Coordinate c)
         {
-            return "RootOfTwo";
+            return "Zeta3";
         }
     }
 }
