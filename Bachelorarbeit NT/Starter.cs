@@ -16,14 +16,11 @@ namespace Bachelorarbeit_NT
         public Starter(int workerNum)
         {
 
-            Channel<Coordinate> jobChannel = Channel.CreateUnbounded<Coordinate>();  //erstelle den Job Queue
-            Channel<Result> resultChannel = Channel.CreateUnbounded<Result>();   //erstelle die result queue
+            Channel<Coordinate> jobChannel = Channel.CreateBounded<Coordinate>(2^32);  //erstelle den Job Queue
+            Channel<Result> resultChannel = Channel.CreateBounded<Result>(2^32);   //erstelle die result queue
                                                                                  
             CancellationTokenSource ctsrc = new CancellationTokenSource();
 
-            var asdfasfd = new Thread(() => JobProducer(Term.TermType.QuadraticTwo, jobChannel, 1, 10000000000000000000)); //hier startet der Job Producer
-            asdfasfd.Start();
-            worker.Add(asdfasfd);
             var Ausgabe = new Thread(() => DbWorker(resultChannel, "connection", ctsrc.Token));// lampda ausdruck um den thread zu initialisieren.
             Ausgabe.Start();
             worker.Add(Ausgabe);
@@ -34,7 +31,10 @@ namespace Bachelorarbeit_NT
                 trh.Start();
                 worker.Add(trh);
             }
-            
+
+            var asdfasfd = new Thread(() => JobProducer(Term.TermType.QuadraticTwo, jobChannel, 1, 10000000000000000000)); //hier startet der Job Producer
+            asdfasfd.Start();
+            worker.Add(asdfasfd);
         }
 
         public async void Worker(ChannelReader<Coordinate> jobChan, ChannelWriter<Result> resultChan, CancellationToken cToken)
@@ -54,9 +54,10 @@ namespace Bachelorarbeit_NT
                 {
                     Console.WriteLine("Worker Fertig");
                     return; }
-
+               
 
             }
+          
         }
         public async void JobProducer(Term.TermType typ, ChannelWriter<Coordinate> jobChan, decimal start, decimal ende)
         {
@@ -82,12 +83,12 @@ namespace Bachelorarbeit_NT
                     y++;
                 }
                 x++;
-                GC.Collect();
+                
 
             }
             Console.WriteLine("Producer Fertig");
 
-            jobChan.Complete();  //wenn die Jobs fertig geladen wurden.
+            //jobChan.Complete();  //wenn die Jobs fertig geladen wurden. funktioniert der JobChan.Complete wirklich so? Bei mir sieht es nach einer Löschung des Channels aus....
         }
         public class Result
         {
@@ -121,7 +122,7 @@ namespace Bachelorarbeit_NT
                         string s = jobItem.type;
                         if (s == "RootOfTwo")
                         {
-                            connection.Open();
+                            connection.Open(); //nicht performant benutze transaction:  https://docs.microsoft.com/en-us/dotnet/standard/data/sqlite/bulk-insert Die Idee wäre hier: Ers
                             var cmd = new SQLiteCommand(connection);
                             cmd.CommandText = @"INSERT INTO Wurzel2(Value) VALUES(@Value)";
                             cmd.Parameters.AddWithValue("@Value", jobItem.result);
@@ -132,7 +133,7 @@ namespace Bachelorarbeit_NT
                         }
                         //Console.WriteLine(jobItem);
                         //@TODO insertCREATE TABLE "Produkt" ()
-                    }
+                   }
 
                     if (cToken.IsCancellationRequested == true)
                     {
@@ -140,8 +141,9 @@ namespace Bachelorarbeit_NT
                         return;
                         
                     }
-
+                    
                 }
+                
 
             }
 
