@@ -17,7 +17,7 @@ namespace Bachelorarbeit_NT
             InitializeComponent();
             string connectDB=Application.StartupPath;
 
-            int cpus = 12;
+            int cpus = 20;
             ulong x = 1;
             ulong y = 1;
             double n1 = 10 * 10e17;

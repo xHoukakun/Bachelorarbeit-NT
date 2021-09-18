@@ -18,8 +18,7 @@ namespace Bachelorarbeit_NT
 
             Channel<Coordinate> jobChannel = Channel.CreateUnbounded<Coordinate>();  //erstelle den Job Queue
             Channel<Result> resultChannel = Channel.CreateUnbounded<Result>();   //erstelle die result queue
-                                                                                 //datenbank verarbeiter muss ähnlivh gema<yvht werden  
-
+                                                                                 
             CancellationTokenSource ctsrc = new CancellationTokenSource();
 
             var asdfasfd = new Thread(() => JobProducer(Term.TermType.QuadraticTwo, jobChannel, 1, 10000000000000000000)); //hier startet der Job Producer
