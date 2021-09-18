@@ -16,8 +16,8 @@ namespace Bachelorarbeit_NT
         public Starter(int workerNum)
         {
 
-            Channel<Coordinate> jobChannel = Channel.CreateBounded<Coordinate>(2^31);  //erstelle den Job Queue
-            Channel<Result> resultChannel = Channel.CreateBounded<Result>(2^31);   //erstelle die result queue
+            Channel<Coordinate> jobChannel = Channel.CreateUnbounded<Coordinate>();  //erstelle den Job Queue
+            Channel<Result> resultChannel = Channel.CreateUnbounded<Result>();   //erstelle die result queue
                                                                                  //datenbank verarbeiter muss ähnlivh gema<yvht werden  
 
             CancellationTokenSource ctsrc = new CancellationTokenSource();
@@ -52,7 +52,9 @@ namespace Bachelorarbeit_NT
                 }
 
                 if (cToken.IsCancellationRequested == true)
-                { return; }
+                {
+                    Console.WriteLine("Worker Fertig");
+                    return; }
 
 
             }
@@ -69,7 +71,7 @@ namespace Bachelorarbeit_NT
             }
             decimal x = 1, y = 1;
 
-            while (x * x <= ende)
+            while (x * x <= ende) //gehe diagonal über das Feld um schneller Ergebnisse zu bekommen
             {
                 decimal x2 = x;
                 y = 1M;
@@ -81,9 +83,10 @@ namespace Bachelorarbeit_NT
                     y++;
                 }
                 x++;
-                
+                GC.Collect();
 
             }
+            Console.WriteLine("Producer Fertig");
 
             jobChan.Complete();  //wenn die Jobs fertig geladen wurden.
         }
@@ -134,7 +137,7 @@ namespace Bachelorarbeit_NT
 
                     if (cToken.IsCancellationRequested == true)
                     {
-                        Console.WriteLine("Ich habe Fertig"); 
+                        Console.WriteLine("DB Worker Fertitg"); 
                         return;
                         
                     }
