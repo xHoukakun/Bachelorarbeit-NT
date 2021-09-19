@@ -39,6 +39,8 @@ namespace Bachelorarbeit_NT
         public abstract decimal CalcQuadratic(Coordinate c);
         public abstract string Alpha(Coordinate c);
 
+        
+
     }
 }
 //abstract meint hier, dass es eine Abstrakte Klasse ist. Es ist ähnlich wie bei verebung. 

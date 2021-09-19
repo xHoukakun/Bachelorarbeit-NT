@@ -39,5 +39,6 @@ namespace Bachelorarbeit_NT
         {
             return t.Alpha(this);
         }
+       
     }
 }
