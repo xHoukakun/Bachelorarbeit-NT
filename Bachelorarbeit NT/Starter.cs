@@ -15,11 +15,21 @@ namespace Bachelorarbeit_NT
     public class Starter
     {
         public List<Thread> worker = new List<Thread>(); //Ich erstelle eine Liste von Threads die Aktiv sind.
+
+        public bool producer_finished = false;
+        public bool worker_finished = false;
+        public bool binder_finished = false;
+        public bool DBConnect_finished = false;
+        public int workerNum = 0;
+        public int workerFinished = 0;
+        public int Binder = 0;
+        
         public Starter(int workerNum,ulong N)
         {
-
-            Channel<Coordinate> jobChannel = Channel.CreateBounded<Coordinate>(33554432);  //erstelle den Job Queue
-            Channel<Result> resultChannel = Channel.CreateBounded<Result>(33554432);   //erstelle die result queue
+            this.workerNum = workerNum;
+            Channel<Coordinate> jobChannel = Channel.CreateBounded<Coordinate>(8388608);  //erstelle den Job Queue
+            Channel<Result> resultChannel = Channel.CreateBounded<Result>(8388608);   //erstelle die result queue
+            Channel<Listb> dbChannel = Channel.CreateBounded<Listb>(5); //erstelle einen DB channel
 
             CancellationTokenSource ctsrc = new CancellationTokenSource();   //der CancellationToken.
 
@@ -32,9 +42,26 @@ namespace Bachelorarbeit_NT
             string connectDB = Convert.ToString(hilfsstring); //ConnectDB ist der String mit dem ich die DB öffne.
             Create_Database(connectDB);
 
-            var Ausgabe = new Thread(() => DbWorker(resultChannel, connectDB, ctsrc.Token));// lambda ausdruck um den thread zu initialisieren.
-            Ausgabe.Start();
-            worker.Add(Ausgabe);
+
+            var DB = new Thread(() => BulkInsert(dbChannel, connectDB, ctsrc.Token));
+            DB.Start();
+            worker.Add(DB);
+            
+            {
+                var Binder1 = new Thread(() => binder(resultChannel, dbChannel, ctsrc.Token));// lambda ausdruck um den thread zu initialisieren.
+                Binder1.Start();
+                worker.Add(Binder1);
+                var Binder2 = new Thread(() => binder(resultChannel, dbChannel, ctsrc.Token));// lambda ausdruck um den thread zu initialisieren.
+                Binder2.Start();
+                worker.Add(Binder2);
+                var Binder3 = new Thread(() => binder(resultChannel, dbChannel, ctsrc.Token));
+                Binder3.Start();
+                worker.Add(Binder3);
+                var Binder4 = new Thread(() => binder(resultChannel, dbChannel, ctsrc.Token));
+                Binder4.Start();
+                worker.Add(Binder4);
+            }
+
             for (int i = 0; i < workerNum; i++)
             {
                 var trh = new Thread(() => Worker(jobChannel, resultChannel, ctsrc.Token,N)); //hier werden Worker erstellt mittels lambda ausdruck man braucht hier eine Anonyme Funktion der man diese Parameter übergibt
@@ -42,16 +69,10 @@ namespace Bachelorarbeit_NT
                 worker.Add(trh);                                                                //ich kenne den Worker ja sogesehen nicht. Der bekommt erst später einen genauen Typen.
             }
 
-            var JobProd1 = new Thread(() => JobProducer(Term.TermType.QuadraticTwo, jobChannel, N)); //hier startet der Job Producer
-            JobProd1.Start();
-            worker.Add(JobProd1);
-            var JobProd2 = new Thread(() => JobProducer(Term.TermType.Euler, jobChannel, N)); //hier startet der Job Producer
-            JobProd2.Start();
-            worker.Add(JobProd2);
-            var JobProd3 = new Thread(() => JobProducer(Term.TermType.Zeta3, jobChannel, N)); //hier startet der Job Producer
-            JobProd3.Start();
-            worker.Add(JobProd3);
-
+            var JobProd = new Thread(() => JobProducer( jobChannel,ctsrc.Token,N)); //hier startet der Job Producer
+            JobProd.Start();
+            worker.Add(JobProd);
+  
         }
 
         public async void Worker(ChannelReader<Coordinate> jobChan, ChannelWriter<Result> resultChan, CancellationToken cToken,ulong N)
@@ -62,40 +83,47 @@ namespace Bachelorarbeit_NT
                 {
                     var s = jobItem.Alpha(); // finde raus welches Item du gerade berechnet hast ( alpha)
 
-
+                    
                     decimal result = jobItem.Calc();   //Berechne es.
-                    if (result < N) { await resultChan.WriteAsync(new Result(s, result)); } //Warte bis du auf die Result schreiben kannst
+                    if (result < N) {await resultChan.WriteAsync(new Result(s, result)); } //Warte bis du auf die Result schreiben kannst
                      
 
                 }
+                if(jobChan.Count == 0&&producer_finished)
+                {
+                    workerFinished++;
+                    
+
+                    if (workerFinished == workerNum)
+                    {
+                        worker_finished = true;
+                        
+                    }
+                    
+                    while (DBConnect_finished == false)
+                    {
+                        Thread.Sleep(1000);
+                    }
+                    
+
+                }
+            
 
                 if (cToken.IsCancellationRequested == true)
                 {
-                    Console.WriteLine("Worker Fertig");
+                    Console.WriteLine("Worker Unterbrochen");
+                    await resultChan.WaitToWriteAsync(cToken);
                     return;
                 }
                
 
             }
-            Console.WriteLine("worker fertig");
+            
 
         }
-        public async void JobProducer(Term.TermType typ, ChannelWriter<Coordinate> jobChan, ulong ende)
+        public async void JobProducer(ChannelWriter<Coordinate> jobChan, CancellationToken cToken, ulong ende)
         {
-            Term t = null;  //standart wert des Typen (Welches alpha soll berechnet werden
-            switch (typ) //switch case für den Typen Man muss den Workern ja den Typ der Rechnung übergeben
-            {
-                case Term.TermType.QuadraticTwo:
-                    t = new RootOfTwo();
-                    break;
-                case Term.TermType.Zeta3:
-                    t = new Zeta3();
-                    break;
-                case Term.TermType.Euler:
-                    t = new Euler();
-                    break;
-                default: throw new ArgumentException();
-            }
+       
             decimal x = 1, y = 1;
 
             while (x * x <= ende) //gehe diagonal über das Feld um schneller Ergebnisse zu bekommen
@@ -105,7 +133,9 @@ namespace Bachelorarbeit_NT
                 while (x2 >= 1)
                 {
 
-                    await jobChan.WriteAsync(new Coordinate(t, x2, y)); //schreibe einen Job in die "Queue" der bearbeitet werden soll 
+                    await jobChan.WriteAsync(new Coordinate(new RootOfTwo(), x2, y)); //schreibe einen Job in die "Queue" der bearbeitet werden soll 
+                    await jobChan.WriteAsync(new Coordinate(new Zeta3(), x2, y));
+                    await jobChan.WriteAsync(new Coordinate(new Euler(), x2, y));
                     x2 = x2 - 1;
                     y++;
                 }
@@ -113,8 +143,13 @@ namespace Bachelorarbeit_NT
 
 
             }
-            Console.WriteLine("Producer Fertig");
             
+            producer_finished = true;
+            while(DBConnect_finished == false) 
+            {
+                Thread.Sleep(1000);
+            }
+            Console.WriteLine("Alles beendet");
             //jobChan.Complete();  //wenn die Jobs fertig geladen wurden. funktioniert der JobChan.Complete wirklich so? Bei mir sieht es nach einer Löschung des Channels aus....
         }
         public class Result  //hier wird ein Result datentyp definiert der besteht aus dem result der rechnung und dem "term" der rechnung da der term nur von Alpha abhängt gebe ich Alpha zurück
@@ -127,8 +162,27 @@ namespace Bachelorarbeit_NT
                 this.result = r;
             }
         }
+        public class Listb
+        {
+            public List<Decimal> r = new List<Decimal>();
+            public string type;
+            public Listb(List<Decimal> _r, string t)
+            {
+                for(int i = 0; i < _r.Count; i++)
+                {
+                    r.Add(_r[i]);
+                }
+                
+                type = t;
+                
+            }
+            public List<decimal> getList()
+            {
+                return r;
+            }
+        }
 
-        public async void DbWorker(ChannelReader<Result> resultChan, string connectionString, CancellationToken cToken) //Das ist der DB worker der schreibt alles  in die Datenbank
+        public async void binder(ChannelReader<Result> resultChan, ChannelWriter<Listb> DBChannel, CancellationToken cToken) //Das ist der DB worker der schreibt alles  in die Datenbank
         {
 
 
@@ -143,31 +197,32 @@ namespace Bachelorarbeit_NT
                     {
 
                         string s = jobItem.type;
+                        decimal u = jobItem.result;
                         switch (s)
                         {
-                            case "RootOfTwo":
-                                RootOfTwo.Add(jobItem.result);
+                                case "RootOfTwo":
+                                RootOfTwo.Add(u);
                                 if (RootOfTwo.Count == 150_000)
                                 {
-                                    BulkInsert(RootOfTwo, s, connectionString);
+                                    await DBChannel.WriteAsync(new Listb(RootOfTwo, "RootOfTwo"));                                  
                                     RootOfTwo.Clear();
                                     
                                 }
                                 break;
                             case "Zeta3":
-                                Zeta3.Add(jobItem.result);
+                                Zeta3.Add(u);
                                 if (Zeta3.Count == 150_000)
                                 {
-                                    BulkInsert(Zeta3, s, connectionString);
-                                    Zeta3.Clear();
+                                await DBChannel.WriteAsync(new Listb(Zeta3, "Zeta3"));
+                                Zeta3.Clear();
                                 }
                                 break;
                             case "Euler":
-                                Euler.Add(jobItem.result);
+                                Euler.Add(u);
                                 if (Euler.Count == 150_000)
                                 {
-                                    BulkInsert(Euler, s, connectionString);
-                                    Euler.Clear();
+                                await DBChannel.WriteAsync(new Listb(Euler, "Euler"));
+                                Euler.Clear();
                                 }
                                 break;
                             default: throw new ArgumentException();
@@ -185,13 +240,31 @@ namespace Bachelorarbeit_NT
                         }*/
 
                     }
+                    if(worker_finished==true&&resultChan.Count==0)
+                    {
+                    await DBChannel.WriteAsync(new Listb(RootOfTwo, "RootOfTwo"));
+                    await DBChannel.WriteAsync(new Listb(Zeta3, "Zeta3"));
+                    await DBChannel.WriteAsync(new Listb(Euler, "Euler"));
 
+                    Binder++;
+                    if(Binder==2)
+                    {
+                        binder_finished = true;
+                    }
+                    
+                    while (DBConnect_finished == false)
+                    {
+                        Thread.Sleep(1000);
+                    }
+                    }
+                    
                     if (cToken.IsCancellationRequested == true)
                     {
-                        BulkInsert(Euler, "Euler", connectionString);
-                        BulkInsert(Zeta3, "Zeta3", connectionString);
-                        BulkInsert(RootOfTwo, "RootOfTwo", connectionString);
-                        Console.WriteLine("DB Worker Fertitg");
+                    await DBChannel.WriteAsync(new Listb(RootOfTwo, "RootOfTwo"));
+                    await DBChannel.WriteAsync(new Listb(Zeta3, "Zeta3"));
+                    await DBChannel.WriteAsync(new Listb(RootOfTwo, "Euler"));
+                    await DBChannel.WaitToWriteAsync(cToken);
+                        
                         return;
 
                     }
@@ -232,7 +305,7 @@ namespace Bachelorarbeit_NT
 
                      ID    INTEGER NOT NULL UNIQUE,
 
-                    Value DECIMAL(65,30) UNIQUE NOT NULL,
+                    Value DECIMAL(65,30) NOT NULL UNIQUE,
                     PRIMARY KEY(ID)
                 )";
                 cmd.ExecuteNonQuery();
@@ -240,7 +313,7 @@ namespace Bachelorarbeit_NT
 
                      ID    INTEGER NOT NULL UNIQUE,
 
-                    Value DECIMAL(65,30) UNIQUE NOT NULL,
+                    Value DECIMAL(65,30) NOT NULL UNIQUE,
                     PRIMARY KEY(ID)
                 )";
                 cmd.ExecuteNonQuery();
@@ -265,47 +338,77 @@ namespace Bachelorarbeit_NT
 
             }
         }
-        public void BulkInsert(List<Decimal> Insert, string Tabelname, string Connect)
+        public async void BulkInsert(ChannelReader<Listb> dbChannel, string Connect, CancellationToken cToken)
         {
-            using (var connection = new SQLiteConnection(Connect))
-            {
-               
-                connection.Open();
-                
-                using (var transaction = connection.BeginTransaction())
+            while (await dbChannel.WaitToReadAsync())    //diese beiden While Schleifen sorgen insbesondere dafür, dass es async ist.  Und man kein Deadlock szenario bekomm ( Auch bekannt als Philosophen Problem)
+            { //versuche es rauszulesen
+                while (dbChannel.TryRead(out var jobItem))
                 {
-                    var command = connection.CreateCommand();
-                    switch (Tabelname)
+                    using (var connection = new SQLiteConnection(Connect))
                     {
-                        case "RootOfTwo":
-                            command.CommandText = @"INSERT INTO Wurzel2(Value) VALUES(@Value) ";
-                            command.Prepare();
-                            break;
-                        case "Euler":
-                            command.CommandText = @"INSERT INTO Eulersche_Zahl(Value) VALUES(@Value) ";
-                            command.Prepare();
-                            break;
-                        case "Zeta3":
-                            command.CommandText = @"INSERT INTO Zeta3(Value) VALUES(@Value) ";
-                            command.Prepare();
-                            break;
-                        default: throw new ArgumentException();
+
+                        connection.Open();
+                        string Tabelname = jobItem.type;
+                        List<decimal> Value = jobItem.getList();
+                        
+                        using (var transaction = connection.BeginTransaction())
+                        {
+                            var command = connection.CreateCommand();
+                            switch (Tabelname)
+                            {
+                                case "RootOfTwo":
+                                    command.CommandText = @"INSERT INTO Wurzel2(Value) VALUES(@Value) ";
+                                    command.Prepare();
+                                    break;
+                                case "Euler":
+                                    command.CommandText = @"INSERT INTO Eulersche_Zahl(Value) VALUES(@Value) ";
+                                    command.Prepare();
+                                    break;
+                                case "Zeta3":
+                                    command.CommandText = @"INSERT INTO Zeta3(Value) VALUES(@Value) ";
+                                    command.Prepare();
+                                    break;
+                                default: throw new ArgumentException();
+                            }
+                            var parameter = command.CreateParameter();
+                            parameter.ParameterName = "@Value";
+                            command.Parameters.Add(parameter);
+                       /*     Value.ForEach(delegate (Decimal value)
+                           {
+
+                                command.Parameters.AddWithValue("@Value", value);
+                                command.Prepare();
+                                command.ExecuteNonQuery();
+
+                            });
+                         */
+                            for (int i = 0;i<Value.Count(); i++)
+                            {
+                                
+                                
+                                    command.Parameters.AddWithValue("@Value", Value[i]);
+                                    command.Prepare();
+                                    command.ExecuteNonQuery();
+                                
+                               
+                            }
+
+                            transaction.Commit();
+                            connection.Close();
+
+                        }
                     }
-                    var parameter = command.CreateParameter();
-                    parameter.ParameterName = "@Value";
-                    command.Parameters.Add(parameter);
-                    Insert.ForEach(delegate (Decimal value)
+                    if(binder_finished==true&&dbChannel.Count==0)
                     {
+                       
+                        DBConnect_finished = true;
+                    }
+                    if (cToken.IsCancellationRequested == true)
+                    {
+                        Console.WriteLine("DB ist fertig");
+                        
 
-                        command.Parameters.AddWithValue("@Value", value);
-                        command.Prepare();
-                        command.ExecuteNonQuery();
-
-                    });
-
-                    transaction.Commit();
-                    connection.Close();
-
+                    }
                 }
             }
 
