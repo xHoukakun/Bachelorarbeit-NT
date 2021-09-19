@@ -27,9 +27,9 @@ namespace Bachelorarbeit_NT
         public Starter(int workerNum,ulong N)
         {
             this.workerNum = workerNum;
-            Channel<Coordinate> jobChannel = Channel.CreateBounded<Coordinate>(8388608);  //erstelle den Job Queue
-            Channel<Result> resultChannel = Channel.CreateBounded<Result>(8388608);   //erstelle die result queue
-            Channel<Listb> dbChannel = Channel.CreateBounded<Listb>(5); //erstelle einen DB channel
+            Channel<Coordinate> jobChannel = Channel.CreateBounded<Coordinate>(8388608);  //erstelle den Job Queue 8388608
+            Channel<Result> resultChannel = Channel.CreateBounded<Result>(33554432);   //erstelle die result queue 33554432
+            Channel<Listb> dbChannel = Channel.CreateBounded<Listb>(256); //erstelle einen DB channel
 
             CancellationTokenSource ctsrc = new CancellationTokenSource();   //der CancellationToken.
 
@@ -42,7 +42,8 @@ namespace Bachelorarbeit_NT
             string connectDB = Convert.ToString(hilfsstring); //ConnectDB ist der String mit dem ich die DB öffne.
             Create_Database(connectDB);
 
-
+            var crDB = new Thread(() => Create_Database(connectDB));
+            crDB.Start();
             var DB = new Thread(() => BulkInsert(dbChannel, connectDB, ctsrc.Token));
             DB.Start();
             worker.Add(DB);
@@ -68,7 +69,7 @@ namespace Bachelorarbeit_NT
                 trh.Start();                                                                    //beispiel für einen "verständlicheren" Lambda findet man unten
                 worker.Add(trh);                                                                //ich kenne den Worker ja sogesehen nicht. Der bekommt erst später einen genauen Typen.
             }
-
+            crDB.Join();
             var JobProd = new Thread(() => JobProducer( jobChannel,ctsrc.Token,N)); //hier startet der Job Producer
             JobProd.Start();
             worker.Add(JobProd);
@@ -202,7 +203,7 @@ namespace Bachelorarbeit_NT
                         {
                                 case "RootOfTwo":
                                 RootOfTwo.Add(u);
-                                if (RootOfTwo.Count == 150_000)
+                                if (RootOfTwo.Count == 200_000)
                                 {
                                     await DBChannel.WriteAsync(new Listb(RootOfTwo, "RootOfTwo"));                                  
                                     RootOfTwo.Clear();
@@ -211,7 +212,7 @@ namespace Bachelorarbeit_NT
                                 break;
                             case "Zeta3":
                                 Zeta3.Add(u);
-                                if (Zeta3.Count == 150_000)
+                                if (Zeta3.Count == 200_000)
                                 {
                                 await DBChannel.WriteAsync(new Listb(Zeta3, "Zeta3"));
                                 Zeta3.Clear();
@@ -219,7 +220,7 @@ namespace Bachelorarbeit_NT
                                 break;
                             case "Euler":
                                 Euler.Add(u);
-                                if (Euler.Count == 150_000)
+                                if (Euler.Count == 200_000)
                                 {
                                 await DBChannel.WriteAsync(new Listb(Euler, "Euler"));
                                 Euler.Clear();
@@ -285,13 +286,14 @@ namespace Bachelorarbeit_NT
             {
                 connection.Open();
                 var cmd = new SQLiteCommand(connection);
+                Console.WriteLine("drop table");
                 cmd.CommandText = "DROP TABLE IF EXISTS Wurzel2";
                 cmd.ExecuteNonQuery();
                 cmd.CommandText = "DROP TABLE IF EXISTS Eulersche_Zahl";
                 cmd.ExecuteNonQuery();
                 cmd.CommandText = "DROP TABLE IF EXISTS Zeta3";
                 cmd.ExecuteNonQuery();
-
+                Console.WriteLine("Dropped Tables");
                 //SQL befehle für das ERstellen der Datenbank
                 cmd.CommandText = @"CREATE TABLE Wurzel2 (
 
@@ -322,22 +324,28 @@ namespace Bachelorarbeit_NT
                 //Da ich nicht weiß in welcher Reihenfolge die Werte rein geschrieben werden 
                 //Sorge ich nachher mit Select befehl das die sehr schnell aufsteigend sortiert werden
                 cmd.CommandText = @"CREATE INDEX Sortiert_Euler ON Eulersche_Zahl(
-                    Value ASC
-                    )";
-                cmd.ExecuteNonQuery();
-                cmd.CommandText = @"CREATE INDEX Sortiert_Wurzel2 ON Wurzel2(
-                    Value ASC
-                    )";
-                cmd.ExecuteNonQuery();
-                cmd.CommandText = @"CREATE INDEX Sortiert_Zeta3 ON Zeta3 (
+                     Value ASC
+                     )";
+                 cmd.ExecuteNonQuery();
+                 cmd.CommandText = @"CREATE INDEX Sortiert_Wurzel2 ON Wurzel2(
+                     Value ASC
+                     )";
+                 cmd.ExecuteNonQuery();
+                 cmd.CommandText = @"CREATE INDEX Sortiert_Zeta3 ON Zeta3 (
 
-                    Value ASC
-                )";
-                cmd.ExecuteNonQuery();
+                     Value ASC
+                 )";
+                 cmd.ExecuteNonQuery();
                 connection.Close();
 
             }
         }
+        /// <summary>
+        /// Bulk Insert für Performance
+        /// </summary>
+        /// <param name="dbChannel"></param>
+        /// <param name="Connect"></param>
+        /// <param name="cToken"></param>
         public async void BulkInsert(ChannelReader<Listb> dbChannel, string Connect, CancellationToken cToken)
         {
             while (await dbChannel.WaitToReadAsync())    //diese beiden While Schleifen sorgen insbesondere dafür, dass es async ist.  Und man kein Deadlock szenario bekomm ( Auch bekannt als Philosophen Problem)
@@ -373,15 +381,7 @@ namespace Bachelorarbeit_NT
                             var parameter = command.CreateParameter();
                             parameter.ParameterName = "@Value";
                             command.Parameters.Add(parameter);
-                       /*     Value.ForEach(delegate (Decimal value)
-                           {
-
-                                command.Parameters.AddWithValue("@Value", value);
-                                command.Prepare();
-                                command.ExecuteNonQuery();
-
-                            });
-                         */
+                      
                             for (int i = 0;i<Value.Count(); i++)
                             {
                                 
@@ -395,6 +395,8 @@ namespace Bachelorarbeit_NT
 
                             transaction.Commit();
                             connection.Close();
+                            var gc = new Thread(() => GC.Collect());
+                            gc.Start();
 
                         }
                     }
