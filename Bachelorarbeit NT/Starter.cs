@@ -483,11 +483,11 @@ namespace Bachelorarbeit_NT
                            
 
                             if (sicheres_beenden)
-                            {
+                            {        //hier werden alle wichtigen Daten zur Aufnahme der nächsten Session gespeichert.
                                 StreamWriter sw = new StreamWriter("Merken" + ".txt");
                                 sw.WriteLine(x);   //erst x
                                 sw.WriteLine(y);    //dann y
-                                sw.WriteLine(AnzahlJobs);
+                                sw.WriteLine(AnzahlJobs); //Dann die Anzahl an Jobs
                                 sw.Close();
                                 StreamWriter sw2 = new StreamWriter("Anzahl.txt");
                                 sw2.WriteLine(AnzahlWurzel2);
@@ -520,7 +520,7 @@ namespace Bachelorarbeit_NT
             {
                 Thread.Sleep(1000);
             }
-            Console.WriteLine("Alles beendet");
+            
             //jobChan.Complete();  //wenn die Jobs fertig geladen wurden. funktioniert der JobChan.Complete wirklich so? Bei mir sieht es nach einer Löschung des Channels aus....
         }
         public class Result  //hier wird ein Result datentyp definiert der besteht aus dem result der rechnung und dem "term" der rechnung da der term nur von Alpha abhängt gebe ich Alpha zurück
@@ -551,9 +551,9 @@ namespace Bachelorarbeit_NT
             {
                 return r;
             }
-        }
+        }  //Datentyp für den Datenbank Channel
         /// <summary>
-        /// Hier ist ein Binder, dieser nimmt sachen aus dem Channel und packt es in Päckchen und sortiert es.
+        /// Hier ist ein Binder, dieser nimmt sachen aus dem Channel  packt es in Päckchen und sortiert es in jeweilige Channels
         /// </summary>
         /// <param name="resultChan">Aus diesem Channel nimmt der Binder</param>
         /// <param name="DBEuler">Datenbank Channel Euler</param>
@@ -919,15 +919,15 @@ namespace Bachelorarbeit_NT
         }
         public async void BulkInsertWurzel2(ChannelReader<Listb> dbChannel,string Connect,CancellationToken cToken)
         {
-            BulkInsert(dbChannel, Connect, cToken);
+            BulkInsert(dbChannel, Connect, cToken); //Rufe Buld Insert mit dem jeweiligen Channel auf( Code redundanz)
         }
         public async void BulkInsertZeta3(ChannelReader<Listb> dbChannel, string Connect, CancellationToken cToken)
         {
-            BulkInsert(dbChannel, Connect, cToken);
+            BulkInsert(dbChannel, Connect, cToken); //Rufe Buld Insert mit dem jeweiligen Channel auf( Code redundanz)
         }
         public async void BulkInsertEuler(ChannelReader<Listb> dbChannel, string Connect, CancellationToken cToken)
         {
-            BulkInsert(dbChannel, Connect, cToken);
+            BulkInsert(dbChannel, Connect, cToken); //Rufe Buld Insert mit dem jeweiligen Channel auf( Code redundanz)
         }
         /// <summary>
         /// Der Controller wird darauf verwendet das falls ein Cancel Requested wird alles noch gesaved wird.
@@ -940,17 +940,18 @@ namespace Bachelorarbeit_NT
         /// <param name="cToken"></param>
         public async void Controller(ChannelReader<Coordinate> jobChannel, ChannelReader<Result> ResultChannel, ChannelReader<Listb> DBA, ChannelReader<Listb> DBB, ChannelReader<Listb> DBC,CancellationToken cToken)
         {
-            while(cToken.IsCancellationRequested==false)
+            while(cToken.IsCancellationRequested==false) //wenn der Token false ist dann wird nichts gemacht.
             {
                 Thread.Sleep(1000);
             }
-            if (cToken.IsCancellationRequested == true)
+            if (cToken.IsCancellationRequested == true) //wenn der Token auf True fällt dann wird ein sicherer abbruch initialisiert.
             {
                 while (true)
                 {
-                    if (jobChannel.Completion.IsCompleted && ResultChannel.Completion.IsCompleted && DBA.Completion.IsCompleted && DBB.Completion.IsCompleted && DBC.Completion.IsCompleted)
+                    if (jobChannel.Completion.IsCompleted && ResultChannel.Completion.IsCompleted && DBA.Completion.IsCompleted && DBB.Completion.IsCompleted && DBC.Completion.IsCompleted) //wenn alle Channels geschlossen sind dann wird das ganze Programm geschlossen
                     {
                         sicheres_beenden = true;
+                        Thread.Sleep(100000); //Nach 10 Sekunden wird ein Bool auf True gesetzt der alles beendet.
                         Form1.save();
                         return;
                     }
