@@ -22,7 +22,7 @@ namespace Bachelorarbeit_NT
             ulong y = 1;
             double n1 = 10 * 10e17;
             ulong n = Convert.ToUInt64(n1);
-            var asdf = new Starter(cpus,500+250);
+            var asdf = new Starter(cpus,n);
 
 
 

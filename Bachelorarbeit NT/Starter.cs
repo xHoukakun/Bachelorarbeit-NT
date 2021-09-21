@@ -9,6 +9,7 @@ using System.Data.SQLite;
 using System.IO;
 using System.Data.SQLite.EF6;
 using System.Data.SqlTypes;
+using System.Numerics;
 
 
 
@@ -36,8 +37,16 @@ namespace Bachelorarbeit_NT
       
 
         public ulong AnzahlWerte=0;
-    
-    
+
+
+
+        private ulong AnzahlWurzel2;
+        private decimal MaxWurzel2;
+        private ulong AnzahlEuler;
+        private decimal MaxEuler;
+        private ulong AnzahlZeta3;
+        private decimal MaxZeta3;
+
         public Starter(int workerNum,ulong N)
         {
 
@@ -103,13 +112,10 @@ namespace Bachelorarbeit_NT
 
                     
                     decimal result = jobItem.Calc();   //Berechne es.
-                    {/* switch (s)
+                    { switch (s)
                     {
                         case  "RootOfTwo":
-                            if(result== Convert.ToDecimal("9,6568542494924"))
-                                {
-
-                            }
+                           
                             if (AnzahlWurzel2 == AnzahlWerte)
                             {
                                 if (result > MaxWurzel2)
@@ -189,9 +195,9 @@ namespace Bachelorarbeit_NT
                             break;
                         default: throw new ArgumentException();
                     }
-                   */
+                   
                     }
-                    await resultChan.WriteAsync(new Result(s, result));
+                    //await resultChan.WriteAsync(new Result(s, result));
 
                 }
                 if(jobChan.Count == 0&&producer_finished)
@@ -237,7 +243,7 @@ namespace Bachelorarbeit_NT
 
             decimal x = 1, y = 1;
             decimal x2 = x;
-            while (AnzahlJobs < ende) //gehe diagonal über das Feld um schneller Ergebnisse zu bekommen
+            while (AnzahlJobs < Math.Ceiling(ende * 1.5))  //gehe diagonal über das Feld um schneller Ergebnisse zu bekommen
             {
                 x2 = x;
                 y = 1M;
@@ -249,40 +255,13 @@ namespace Bachelorarbeit_NT
                     await jobChan.WriteAsync(new Coordinate(new Euler(), x2, y));
                     x2 = x2 - 1;
                     y++;
-                    AnzahlJobs++;
+                    
                 }
                 x++;
 
 
             }
-            {
-                x2 = x;
-                y = 1M;
-                while (x2 >= 1)
-                {
-
-                    await jobChan.WriteAsync(new Coordinate(new RootOfTwo(), x2, y)); //schreibe einen Job in die "Queue" der bearbeitet werden soll 
-                    await jobChan.WriteAsync(new Coordinate(new Zeta3(), x2, y));
-                    await jobChan.WriteAsync(new Coordinate(new Euler(), x2, y));
-                    x2 = x2 - 1;
-                    y++;
-                    AnzahlJobs++;
-                }
-                x++;
-                x2 = x;
-                y = 1M;
-                while (x2 >= 1)
-                {
-
-                    await jobChan.WriteAsync(new Coordinate(new RootOfTwo(), x2, y)); //schreibe einen Job in die "Queue" der bearbeitet werden soll 
-                    await jobChan.WriteAsync(new Coordinate(new Zeta3(), x2, y));
-                    await jobChan.WriteAsync(new Coordinate(new Euler(), x2, y));
-                    x2 = x2 - 1;
-                    y++;
-                    AnzahlJobs++;
-                }
-               
-            }
+           
 
 
             producer_finished = true;
