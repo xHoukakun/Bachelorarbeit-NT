@@ -17,18 +17,22 @@ namespace Bachelorarbeit_NT
             InitializeComponent();
             string connectDB=Application.StartupPath;
 
-            int cpus = 20;
+            int cpus = 12;
             ulong x = 1;
             ulong y = 1;
             double n1 = 10 * 10e17;
             ulong n = Convert.ToUInt64(n1);
-            var asdf = new Starter(cpus,n);
+            var asdf = new Starter(cpus,500+250);
 
 
 
         }
 
         private void Form1_Load(object sender, EventArgs e)
+        {
+
+        }
+        public static void Change_Text()
         {
 
         }

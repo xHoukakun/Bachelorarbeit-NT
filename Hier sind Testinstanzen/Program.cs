@@ -33,9 +33,7 @@ namespace Hier_sind_Testinstanzen
             using var cmd = new SQLiteCommand(con);
 
             cmd.CommandText = "DROP TABLE IF EXISTS data";
-            cmd.ExecuteNonQuery();
-            cmd.CommandText = "DROP TABLE IF EXISTS cars";
-            cmd.ExecuteNonQuery();
+        
             cmd.CommandText = @"CREATE TABLE data (
 
                     ID    INTEGER NOT NULL UNIQUE,
@@ -59,21 +57,28 @@ namespace Hier_sind_Testinstanzen
                 command.Parameters.Add(parameter);
 
                 // Insert a lot of data
-                
+                List<Decimal> Values = new List<decimal>();
+                var random = new Random();
+                for (var i = 0; i < 150_000; i++)
+                {
+                    Values.Add(random.Next());
+                }
                 Values.ForEach(delegate (Decimal value)
                 {
                     
                     command.Parameters.AddWithValue("@Value", value);
-                    command.Prepare();
-                    command.ExecuteNonQuery();
+                    command.PrepareAsync();
+                    command.ExecuteNonQueryAsync();
+                    
 
                 });
                   
                 Values.Clear();
-                    
                 
+                    
 
-                transaction.Commit();
+                transaction.CommitAsync();
+                con.CloseAsync();
             }
         }
     }
