@@ -4,12 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Channels;
-using System.Data.SqlClient;
 using System.Data.SQLite;
 using System.IO;
-using System.Data.SQLite.EF6;
-using System.Data.SqlTypes;
-using System.Numerics;
+
 
 
 
@@ -21,9 +18,9 @@ namespace Bachelorarbeit_NT
     public class Starter
     {
         public List<Thread> worker = new List<Thread>(); //Ich erstelle eine Liste von Threads die Aktiv sind.
+        private List<Thread> dbcreater = new List<Thread>();
 
-        
-        
+
         public bool producer_finished = false;
         public bool worker_finished = false;
         public bool binder_finished = false;
@@ -34,9 +31,9 @@ namespace Bachelorarbeit_NT
 
         ulong AnzahlJobs = 0;
 
-      
 
-        public ulong AnzahlWerte=0;
+
+        public ulong AnzahlWerte = 0;
 
 
 
@@ -47,61 +44,105 @@ namespace Bachelorarbeit_NT
         private ulong AnzahlZeta3;
         private decimal MaxZeta3;
 
-        public Starter(int workerNum,ulong N)
+        public Starter(int workerNum, ulong N,CancellationToken cToken)
         {
 
             AnzahlWerte = N;
             this.workerNum = workerNum;
-            Channel<Coordinate> jobChannel = Channel.CreateBounded<Coordinate>(8388608);  //erstelle den Job Queue 8388608
+            Channel<Coordinate> jobChannel = Channel.CreateBounded<Coordinate>(65536);  //erstelle den Job Queue 8388608
             Channel<Result> resultChannel = Channel.CreateBounded<Result>(33554432);   //erstelle die result queue 33554432
-            Channel<Listb> dbChannel = Channel.CreateBounded<Listb>(256); //erstelle einen DB channel
+            Channel<Listb> dbChannelW2 = Channel.CreateBounded<Listb>(128); //erstelle einen DB channel
+            Channel<Listb> dbChannelEuler = Channel.CreateBounded<Listb>(128);
+            Channel<Listb> dbChannelZeta3 = Channel.CreateBounded<Listb>(128);
 
-            CancellationTokenSource ctsrc = new CancellationTokenSource();   //der CancellationToken.
-            
-            Form1.Change_Text();
-            StringBuilder connectDB1 = new StringBuilder(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)); //man erfährt wo die DB liegt. Insbesondere sorgen die Nächsten Zeilen code für die DB
-            connectDB1.Remove(connectDB1.Length - 5, 5);
-            connectDB1.Append("Values.db");        //Datenbank heißt Values;
-            StringBuilder hilfsstring = new StringBuilder(@"URI=file:");
-            hilfsstring.Append(connectDB1);
-            string connectDB = Convert.ToString(hilfsstring); //ConnectDB ist der String mit dem ich die DB öffne.
-            Create_Database(connectDB);
-
-            var crDB = new Thread(() => Create_Database(connectDB));
-            crDB.Start();
-            
-           var DB = new Thread(() => BulkInsert(dbChannel, connectDB, ctsrc.Token));
-           DB.Start();
-           worker.Add(DB);
-         
+            //DBW2 DBEuler DBZeta3
             {
-                var Binder1 = new Thread(() => binder(resultChannel, dbChannel, ctsrc.Token));// lambda ausdruck um den thread zu initialisieren.
+                StringBuilder connectWurzel2 = new StringBuilder(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)); //man erfährt wo die DB liegt. Insbesondere sorgen die Nächsten Zeilen code für die DB
+                connectWurzel2.Remove(connectWurzel2.Length - 5, 5);
+                connectWurzel2.Append("Wurzel2.db");
+                StringBuilder W2 = new StringBuilder(@"URI=file:");
+                W2.Append(connectWurzel2);
+                string DBW2 = Convert.ToString(W2);
+
+                var crDB = new Thread(() => Create_Database(DBW2));
+                crDB.Start();
+                dbcreater.Add(crDB);
+                var Wurzel2t = new Thread(() => BulkInsertWurzel2(dbChannelW2, DBW2, cToken));
+                Wurzel2t.Start();
+                worker.Add(Wurzel2t);
+                
+            }
+            {
+                StringBuilder connectEuler = new StringBuilder(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)); //man erfährt wo die DB liegt. Insbesondere sorgen die Nächsten Zeilen code für die DB
+                connectEuler.Remove(connectEuler.Length - 5, 5);
+                connectEuler.Append("Euler.db");
+                StringBuilder Euler2 = new StringBuilder(@"URI=file:");
+                Euler2.Append(connectEuler);
+                string DBEuler = Convert.ToString(Euler2);
+
+                var crDB = new Thread(() => Create_Database(DBEuler));
+                crDB.Start();
+                dbcreater.Add(crDB);
+                var DBEulert = new Thread(() => BulkInsertEuler(dbChannelEuler, DBEuler, cToken));
+                DBEulert.Start();
+                worker.Add(DBEulert);
+
+            }
+            {
+                StringBuilder connectZeta3 = new StringBuilder(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)); //man erfährt wo die DB liegt. Insbesondere sorgen die Nächsten Zeilen code für die DB
+                connectZeta3.Remove(connectZeta3.Length - 5, 5);
+                connectZeta3.Append("Zeta3.db");
+                StringBuilder zeta3 = new StringBuilder(@"URI=file:");
+                zeta3.Append(connectZeta3);
+                string DBZeta3 = Convert.ToString(zeta3);
+
+                var crDB = new Thread(() => Create_Database(DBZeta3));
+                crDB.Start();
+                dbcreater.Add(crDB);
+                var DBZeta3t = new Thread(() => BulkInsertZeta3(dbChannelZeta3, DBZeta3, cToken));
+                DBZeta3t.Start();
+                worker.Add(DBZeta3t);
+            }
+            // var DB = new Thread(() => BulkInsert(dbChannel, connectDB, ctsrc.Token));
+            // DB.Start();
+            // worker.Add(DB);
+
+            
+           {
+                var Binder1 = new Thread(() => binder(resultChannel, dbChannelEuler, dbChannelW2, dbChannelZeta3, cToken));// lambda ausdruck um den thread zu initialisieren.
                 Binder1.Start();
                 worker.Add(Binder1);
-                var Binder2 = new Thread(() => binder(resultChannel, dbChannel, ctsrc.Token));// lambda ausdruck um den thread zu initialisieren.
+                var Binder2 = new Thread(() => binder(resultChannel, dbChannelEuler, dbChannelW2, dbChannelZeta3, cToken));// lambda ausdruck um den thread zu initialisieren.
                 Binder2.Start();
                 worker.Add(Binder2);
-                var Binder3 = new Thread(() => binder(resultChannel, dbChannel, ctsrc.Token));
+                var Binder3 = new Thread(() => binder(resultChannel, dbChannelEuler, dbChannelW2, dbChannelZeta3, cToken));
                 Binder3.Start();
                 worker.Add(Binder3);
-                var Binder4 = new Thread(() => binder(resultChannel, dbChannel, ctsrc.Token));
+                var Binder4 = new Thread(() => binder(resultChannel, dbChannelEuler, dbChannelW2, dbChannelZeta3, cToken));
                 Binder4.Start();
                 worker.Add(Binder4);
-            } //Hier werden 4 Binder erstellt
-
+            } //Hier werden 4 Binder erstellt 
+           //Erstelle Worker
             for (int i = 0; i < workerNum; i++)
             {
-                var trh = new Thread(() => Worker(jobChannel, resultChannel, ctsrc.Token,N)); //hier werden Worker erstellt mittels lambda ausdruck man braucht hier eine Anonyme Funktion der man diese Parameter übergibt
+                var trh = new Thread(() => Worker(jobChannel, resultChannel, cToken, N));        //hier werden Worker erstellt mittels lambda ausdruck man braucht hier eine Anonyme Funktion der man diese Parameter übergibt
                 trh.Start();                                                                    //beispiel für einen "verständlicheren" Lambda findet man unten
                 worker.Add(trh);                                                                //ich kenne den Worker ja sogesehen nicht. Der bekommt erst später einen genauen Typen.
-            }
-            crDB.Join();
-            var JobProd = new Thread(() => JobProducer( jobChannel,ctsrc.Token,N)); //hier startet der Job Producer
+            }  
+            dbcreater.ForEach(delegate (Thread thread) //Warte auf die erstellung der Datenbanken
+            {
+
+                thread.Join();
+
+
+            });
+
+            var JobProd = new Thread(() => JobProducer(jobChannel, cToken, N)); //hier startet der Job Producer
             JobProd.Start();
             worker.Add(JobProd);
-  
-        }
 
+        }
+      
         public async void Worker(ChannelReader<Coordinate> jobChan, ChannelWriter<Result> resultChan, CancellationToken cToken,ulong N)
         {
             while (await jobChan.WaitToReadAsync()) //Warte bis irgendwas in der queue ist um es zu berechnen
@@ -226,7 +267,7 @@ namespace Bachelorarbeit_NT
 
                 if (cToken.IsCancellationRequested == true)
                 {
-                    Console.WriteLine("Worker Unterbrochen");
+                    
                     
                     return;
                    
@@ -239,10 +280,33 @@ namespace Bachelorarbeit_NT
         }
         public async void JobProducer(ChannelWriter<Coordinate> jobChan, CancellationToken cToken, ulong ende)
         {
-       
-
             decimal x = 1, y = 1;
             decimal x2 = x;
+            if (File.Exists("Merken.txt"))
+            {
+
+                string hile = "Merken.txt";
+
+                System.IO.StreamReader reader = new System.IO.StreamReader(hile);
+                x = Convert.ToDecimal(reader.ReadLine());
+                x2 = x;
+                y = Convert.ToDecimal(reader.ReadLine());
+                AnzahlJobs = Convert.ToUInt64(reader.ReadLine());
+                reader.Close();
+                while (x2 >= 1)
+                {
+
+                    await jobChan.WriteAsync(new Coordinate(new RootOfTwo(), x2, y)); //schreibe einen Job in die "Queue" der bearbeitet werden soll 
+                    await jobChan.WriteAsync(new Coordinate(new Zeta3(), x2, y));
+                    await jobChan.WriteAsync(new Coordinate(new Euler(), x2, y));
+                    x2 = x2 - 1;
+                    y++;
+                    AnzahlJobs++;
+
+
+                }
+                x++;
+            }
             while (AnzahlJobs < Math.Ceiling(ende * 1.5))  //gehe diagonal über das Feld um schneller Ergebnisse zu bekommen
             {
                 x2 = x;
@@ -255,9 +319,23 @@ namespace Bachelorarbeit_NT
                     await jobChan.WriteAsync(new Coordinate(new Euler(), x2, y));
                     x2 = x2 - 1;
                     y++;
-                    
+                    AnzahlJobs++;
+                    if (cToken.IsCancellationRequested == true)
+                    {
+
+                        jobChan.TryComplete();
+                        StreamWriter sw = new StreamWriter("Merken" + ".txt");
+                        sw.WriteLine(x);   //erst x
+                        sw.WriteLine(y);    //dann y
+                        sw.WriteLine(AnzahlJobs);
+                        sw.Close();
+                        Form1.save();
+                        return;
+
+                    }
                 }
                 x++;
+               
 
 
             }
@@ -302,8 +380,15 @@ namespace Bachelorarbeit_NT
                 return r;
             }
         }
-
-        public async void binder(ChannelReader<Result> resultChan, ChannelWriter<Listb> DBChannel, CancellationToken cToken) //Das ist der DB worker der schreibt alles  in die Datenbank
+        /// <summary>
+        /// Hier ist ein Binder, dieser nimmt sachen aus dem Channel und packt es in Päckchen und sortiert es.
+        /// </summary>
+        /// <param name="resultChan">Aus diesem Channel nimmt der Binder</param>
+        /// <param name="DBEuler">Datenbank Channel Euler</param>
+        /// <param name="DBWurzel2">Datenbank Channel Wurzel2</param>
+        /// <param name="DBZeta3">Datenbank channel Zeta3 </param>
+        /// <param name="cToken"></param>
+        public async void binder(ChannelReader<Result> resultChan, ChannelWriter<Listb> DBEuler, ChannelWriter<Listb> DBWurzel2, ChannelWriter<Listb> DBZeta3, CancellationToken cToken) //Das ist der DB worker der schreibt alles  in die Datenbank
         {
 
 
@@ -328,7 +413,7 @@ namespace Bachelorarbeit_NT
                                 RootOfTwo.Add(u);
                                 if (RootOfTwo.Count == 200_000)
                                 {
-                                    await DBChannel.WriteAsync(new Listb(RootOfTwo, "RootOfTwo"));
+                                    await DBWurzel2.WriteAsync(new Listb(RootOfTwo, "RootOfTwo"));
                                     RootOfTwo.Clear();
 
                                 }
@@ -337,7 +422,7 @@ namespace Bachelorarbeit_NT
                                 Zeta3.Add(u);
                                 if (Zeta3.Count == 200_000)
                                 {
-                                    await DBChannel.WriteAsync(new Listb(Zeta3, "Zeta3"));
+                                    await DBZeta3.WriteAsync(new Listb(Zeta3, "Zeta3"));
                                     Zeta3.Clear();
                                 }
                                 break;
@@ -345,7 +430,7 @@ namespace Bachelorarbeit_NT
                                 Euler.Add(u);
                                 if (Euler.Count == 200_000)
                                 {
-                                    await DBChannel.WriteAsync(new Listb(Euler, "Euler"));
+                                    await DBEuler.WriteAsync(new Listb(Euler, "Euler"));
                                     Euler.Clear();
                                 }
                                 break;
@@ -361,16 +446,18 @@ namespace Bachelorarbeit_NT
                 }
             
                 
-                await DBChannel.WriteAsync(new Listb(RootOfTwo, "RootOfTwo"));
-                await DBChannel.WriteAsync(new Listb(Zeta3, "Zeta3"));
-                await DBChannel.WriteAsync(new Listb(Euler, "Euler"));
+                await DBWurzel2.WriteAsync(new Listb(RootOfTwo, "RootOfTwo"));
+                await DBZeta3.WriteAsync(new Listb(Zeta3, "Zeta3"));
+                await DBEuler.WriteAsync(new Listb(Euler, "Euler"));
 
                 Binder++;
                 if (Binder == 4)
                 {
                     binder_finished = true;
                    
-                    DBChannel.TryComplete();
+                    DBEuler.TryComplete();
+                    DBZeta3.TryComplete();
+                    DBWurzel2.TryComplete();
                 }
 
                 while (DBConnect_finished == false)
@@ -390,7 +477,7 @@ namespace Bachelorarbeit_NT
              /// </summary>
              /// <param name="connect">Connection String für die database</param>
             public void Create_Database(string connect)
-        {
+            {
             using (var connection = new SQLiteConnection(connect))
             {
                 connection.Open();
@@ -448,7 +535,7 @@ namespace Bachelorarbeit_NT
                 connection.Close();
 
             }
-        }
+            }
         /// <summary>
         /// Bulk Insert für Performance
         /// </summary>
@@ -529,6 +616,18 @@ namespace Bachelorarbeit_NT
             }
            
 
+        }
+        public async void BulkInsertWurzel2(ChannelReader<Listb> dbChannel,string Connect,CancellationToken cToken)
+        {
+            BulkInsert(dbChannel, Connect, cToken);
+        }
+        public async void BulkInsertZeta3(ChannelReader<Listb> dbChannel, string Connect, CancellationToken cToken)
+        {
+            BulkInsert(dbChannel, Connect, cToken);
+        }
+        public async void BulkInsertEuler(ChannelReader<Listb> dbChannel, string Connect, CancellationToken cToken)
+        {
+            BulkInsert(dbChannel, Connect, cToken);
         }
     }
 }

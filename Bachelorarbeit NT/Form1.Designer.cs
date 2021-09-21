@@ -1,4 +1,5 @@
-﻿
+﻿using System.Threading;
+using System;
 namespace Bachelorarbeit_NT
 {
     partial class Form1
@@ -14,6 +15,11 @@ namespace Bachelorarbeit_NT
         /// <param name="disposing">True, wenn verwaltete Ressourcen gelöscht werden sollen; andernfalls False.</param>
         protected override void Dispose(bool disposing)
         {
+            ctsrc.Cancel();
+            while(!saved)
+            {
+                Console.WriteLine("Kein Sicheres Beenden");
+            }
             if (disposing && (components != null))
             {
                 components.Dispose();
