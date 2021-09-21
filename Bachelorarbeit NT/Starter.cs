@@ -29,6 +29,7 @@ namespace Bachelorarbeit_NT
         public int workerFinished = 0;
         public int Binder = 0;
         public bool sicheres_beenden = false;
+        public bool producer = false;
 
         ulong AnzahlJobs = 0;
 
@@ -52,9 +53,9 @@ namespace Bachelorarbeit_NT
             this.workerNum = workerNum;
             Channel<Coordinate> jobChannel = Channel.CreateBounded<Coordinate>(65536);  //erstelle den Job Queue 8388608
             Channel<Result> resultChannel = Channel.CreateBounded<Result>(33554432);   //erstelle die result queue 33554432
-            Channel<Listb> dbChannelW2 = Channel.CreateBounded<Listb>(16); //erstelle einen DB channel
-            Channel<Listb> dbChannelEuler = Channel.CreateBounded<Listb>(16);
-            Channel<Listb> dbChannelZeta3 = Channel.CreateBounded<Listb>(16);
+            Channel<Listb> dbChannelW2 = Channel.CreateBounded<Listb>(8); //erstelle einen DB channel
+            Channel<Listb> dbChannelEuler = Channel.CreateBounded<Listb>(8);
+            Channel<Listb> dbChannelZeta3 = Channel.CreateBounded<Listb>(8);
 
             //DBW2 DBEuler DBZeta3
             {
@@ -146,16 +147,14 @@ namespace Bachelorarbeit_NT
                 DBZeta3t.Start();
                 worker.Add(DBZeta3t);
             }
-            // var DB = new Thread(() => BulkInsert(dbChannel, connectDB, ctsrc.Token));
-            // DB.Start();
-            // worker.Add(DB);
+       
 
 
             {
                 var Binder1 = new Thread(() => binder(resultChannel, dbChannelEuler, dbChannelW2, dbChannelZeta3, cToken));// lambda ausdruck um den thread zu initialisieren.
                 Binder1.Start();
                 worker.Add(Binder1);
-               /* var Binder2 = new Thread(() => binder(resultChannel, dbChannelEuler, dbChannelW2, dbChannelZeta3, cToken));// lambda ausdruck um den thread zu initialisieren.
+                var Binder2 = new Thread(() => binder(resultChannel, dbChannelEuler, dbChannelW2, dbChannelZeta3, cToken));// lambda ausdruck um den thread zu initialisieren.
                 Binder2.Start();
                 worker.Add(Binder2);
                 var Binder3 = new Thread(() => binder(resultChannel, dbChannelEuler, dbChannelW2, dbChannelZeta3, cToken));
@@ -163,7 +162,7 @@ namespace Bachelorarbeit_NT
                 worker.Add(Binder3);
                 var Binder4 = new Thread(() => binder(resultChannel, dbChannelEuler, dbChannelW2, dbChannelZeta3, cToken));
                 Binder4.Start();
-                worker.Add(Binder4); */
+                worker.Add(Binder4); 
             } //Hier werden 4 Binder erstellt 
               //Erstelle Worker
             var controller = new Thread(() => Controller(jobChannel, resultChannel, dbChannelEuler, dbChannelW2, dbChannelZeta3, cToken));
@@ -478,6 +477,7 @@ namespace Bachelorarbeit_NT
                     if (cToken.IsCancellationRequested == true)
                     {
                         jobChan.TryComplete();
+                        producer = true;
                         while (true)
                         {
                            
@@ -500,7 +500,7 @@ namespace Bachelorarbeit_NT
                                 return;
 
                             }
-                            Thread.Sleep(2000);
+                            Thread.Sleep(500);
 
                         }
 
@@ -817,7 +817,14 @@ namespace Bachelorarbeit_NT
 
                             command.Parameters.AddWithValue("@Value", Value[i]);
                             command.Prepare();
-                            await command.ExecuteNonQueryAsync();
+                            try
+                            { 
+                                await command.ExecuteNonQueryAsync(); 
+                            }
+                            catch(Exception d)
+                            {
+                                Console.WriteLine(d);
+                            }
 
 
                         }
@@ -882,8 +889,14 @@ namespace Bachelorarbeit_NT
 
                                     command.Parameters.AddWithValue("@Value", Value[i]);
                                     command.Prepare();
-                                    await command.ExecuteNonQueryAsync();
-
+                                    try
+                                    {
+                                        await command.ExecuteNonQueryAsync();
+                                    }
+                                    catch(Exception d)
+                                    {
+                                        Console.WriteLine(d);
+                                    }
 
                                 }
 
@@ -948,13 +961,19 @@ namespace Bachelorarbeit_NT
             {
                 while (true)
                 {
-                    if (jobChannel.Completion.IsCompleted && ResultChannel.Completion.IsCompleted && DBA.Completion.IsCompleted && DBB.Completion.IsCompleted && DBC.Completion.IsCompleted) //wenn alle Channels geschlossen sind dann wird das ganze Programm geschlossen
+                    if (producer == true)//wenn alle Channels geschlossen sind dann wird das ganze Programm geschlossen
                     {
-                        sicheres_beenden = true;
-                        Thread.Sleep(100000); //Nach 10 Sekunden wird ein Bool auf True gesetzt der alles beendet.
-                        Form1.save();
-                        return;
+                        if (jobChannel.Count == 0 && ResultChannel.Count == 0 && DBA.Count == 0 && DBB.Count == 0 && DBC.Count == 0)
+                        {
+
+                            sicheres_beenden = true;
+                            Thread.Sleep(10000); //Nach 10 Sekunden wird ein Bool auf True gesetzt der alles beendet.
+                            Form1.save();
+                            return;
+
+                        }
                     }
+                    Thread.Sleep(1000);
 
                 }
             }

@@ -18,12 +18,14 @@ namespace Bachelorarbeit_NT
             ctsrc.Cancel();
             while(!saved)
             {
+                Thread.Sleep(1000);
                 Console.WriteLine("Kein Sicheres Beenden");
             }
             if (disposing && (components != null))
             {
                 components.Dispose();
             }
+            Console.WriteLine("Sicher beendet");
             base.Dispose(disposing);
         }
 
