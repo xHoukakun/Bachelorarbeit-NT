@@ -6,7 +6,7 @@ using System.Threading;
 using System.Threading.Channels;
 using System.Data.SQLite;
 using System.IO;
-
+using System.Numerics;
 
 
 
@@ -20,7 +20,7 @@ namespace Bachelorarbeit_NT
         public List<Thread> worker = new List<Thread>(); //Ich erstelle eine Liste von Threads die Aktiv sind.
         private List<Thread> dbcreater = new List<Thread>();
 
-
+        
         public bool producer_finished = false;
         public bool worker_finished = false;
         public bool binder_finished = false;
@@ -672,7 +672,21 @@ namespace Bachelorarbeit_NT
                     {
                         if (sicheres_beenden)
                         {
-                            return;
+                            Binder++;
+                            if (Binder == 4)
+                            {
+                                binder_finished = true;
+
+                                DBEuler.TryComplete();
+                                DBZeta3.TryComplete();
+                                DBWurzel2.TryComplete();
+                                return;
+                            }
+                            else
+                            {
+                                return;
+                            }
+                            
                         }
                         Thread.Sleep(2000);
                     }
@@ -819,11 +833,19 @@ namespace Bachelorarbeit_NT
                             command.Prepare();
                             try
                             { 
-                                await command.ExecuteNonQueryAsync(); 
+                                await command.ExecuteNonQueryAsync();
+                                
                             }
                             catch(Exception d)
                             {
-                                Console.WriteLine(d);
+                                if(Convert.ToString(d).Contains("UNIQUE"))
+                                {
+                                    
+                                }
+                                else
+                                {
+                                    throw new InvalidDataException();
+                                }
                             }
 
 
@@ -911,7 +933,10 @@ namespace Bachelorarbeit_NT
 
 
                         }
-
+                        if(sicheres_beenden)
+                        {
+                            return;
+                        }
                     }
                     while (true)
                     {
