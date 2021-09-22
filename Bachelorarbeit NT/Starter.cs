@@ -54,98 +54,9 @@ namespace Bachelorarbeit_NT
             Channel<Listb> dbChannelEuler = Channel.CreateBounded<Listb>(8);
             Channel<Listb> dbChannelZeta3 = Channel.CreateBounded<Listb>(8);
 
-            //DBW2 DBEuler DBZeta3
-            {
-                if (File.Exists("Anzahl.txt"))
-                {
-                    string file = "Anzahl.txt";
-
-                    StreamReader reader = new StreamReader(file);
-                    AnzahlWurzel2 = Convert.ToUInt64(reader.ReadLine()); //Ein Controller der alles überwacht aber kein Item rausnimmt. 
-                    MaxWurzel2 = Convert.ToDecimal(reader.ReadLine());
-                    AnzahlEuler = Convert.ToUInt64(reader.ReadLine());
-                    MaxEuler = Convert.ToDecimal(reader.ReadLine());
-                    AnzahlZeta3 = Convert.ToUInt64(reader.ReadLine());
-                    MaxZeta3 = Convert.ToDecimal(reader.ReadLine());
-                    reader.Close();
-                }
-                else
-                {
-                    StringBuilder connectZeta3 = new StringBuilder(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)); //man erfährt wo die DB liegt. Insbesondere sorgen die Nächsten Zeilen code für die DB
-                    connectZeta3.Remove(connectZeta3.Length - 5, 5);
-                    connectZeta3.Append("Zeta3.db");
-                    StringBuilder zeta3 = new StringBuilder(@"URI=file:");
-                    zeta3.Append(connectZeta3);
-                    string DBZeta3 = Convert.ToString(zeta3);
-
-                    var crDB = new Thread(() => Create_Database(DBZeta3));
-                    crDB.Start();
-                    dbcreater.Add(crDB);
-
-                    StringBuilder connectEuler = new StringBuilder(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)); //man erfährt wo die DB liegt. Insbesondere sorgen die Nächsten Zeilen code für die DB
-                    connectEuler.Remove(connectEuler.Length - 5, 5);
-                    connectEuler.Append("Euler.db");
-                    StringBuilder Euler2 = new StringBuilder(@"URI=file:");
-                    Euler2.Append(connectEuler);
-                    string DBEuler = Convert.ToString(Euler2);
-
-                    var crDB1 = new Thread(() => Create_Database(DBEuler));
-                    crDB1.Start();
-                    dbcreater.Add(crDB1);
-
-                    StringBuilder connectWurzel2 = new StringBuilder(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)); //man erfährt wo die DB liegt. Insbesondere sorgen die Nächsten Zeilen code für die DB
-                    connectWurzel2.Remove(connectWurzel2.Length - 5, 5);
-                    connectWurzel2.Append("Wurzel2.db");
-                    StringBuilder W2 = new StringBuilder(@"URI=file:");
-                    W2.Append(connectWurzel2);
-                    string DBW2 = Convert.ToString(W2);
-
-                    var crDB2 = new Thread(() => Create_Database(DBW2));
-                    crDB2.Start();
-                    dbcreater.Add(crDB2);
-                }
-            }
-            {
-                StringBuilder connectWurzel2 = new StringBuilder(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)); //man erfährt wo die DB liegt. Insbesondere sorgen die Nächsten Zeilen code für die DB
-                connectWurzel2.Remove(connectWurzel2.Length - 5, 5);
-                connectWurzel2.Append("Wurzel2.db");
-                StringBuilder W2 = new StringBuilder(@"URI=file:");
-                W2.Append(connectWurzel2);
-                string DBW2 = Convert.ToString(W2);
-
-                var Wurzel2t = new Thread(() => BulkInsertWurzel2(dbChannelW2, DBW2, cToken));
-                Wurzel2t.Start();
-                worker.Add(Wurzel2t);
-
-            }
-            {
-                StringBuilder connectEuler = new StringBuilder(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)); //man erfährt wo die DB liegt. Insbesondere sorgen die Nächsten Zeilen code für die DB
-                connectEuler.Remove(connectEuler.Length - 5, 5);
-                connectEuler.Append("Euler.db");
-                StringBuilder Euler2 = new StringBuilder(@"URI=file:");
-                Euler2.Append(connectEuler);
-                string DBEuler = Convert.ToString(Euler2);
 
 
-                var DBEulert = new Thread(() => BulkInsertEuler(dbChannelEuler, DBEuler, cToken));
-                DBEulert.Start();
-                worker.Add(DBEulert);
-
-            }
-            {
-                StringBuilder connectZeta3 = new StringBuilder(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)); //man erfährt wo die DB liegt. Insbesondere sorgen die Nächsten Zeilen code für die DB
-                connectZeta3.Remove(connectZeta3.Length - 5, 5);
-                connectZeta3.Append("Zeta3.db");
-                StringBuilder zeta3 = new StringBuilder(@"URI=file:");
-                zeta3.Append(connectZeta3);
-                string DBZeta3 = Convert.ToString(zeta3);
-
-                var DBZeta3t = new Thread(() => BulkInsertZeta3(dbChannelZeta3, DBZeta3, cToken));
-                DBZeta3t.Start();
-                worker.Add(DBZeta3t);
-            }
-       
-
+                Database_Management(dbChannelW2, dbChannelEuler, dbChannelZeta3, cToken); //hier wird die Datenbank erstellt. Ich habe das in eine Methode ausgelagert für die Lesbarkeit
 
             {
                 var Binder1 = new Thread(() => binder(resultChannel, dbChannelEuler, dbChannelW2, dbChannelZeta3, cToken));// lambda ausdruck um den thread zu initialisieren.
@@ -708,6 +619,98 @@ namespace Bachelorarbeit_NT
                     Thread.Sleep(1000);
 
                 }
+            }
+
+        }
+        public void Database_Management(ChannelReader<Listb> dbChannelW2, ChannelReader<Listb> dbChannelEuler, ChannelReader<Listb> dbChannelZeta3, CancellationToken cToken)
+        {
+            if (File.Exists("Anzahl.txt"))
+            {
+                string file = "Anzahl.txt";
+
+                StreamReader reader = new StreamReader(file);
+                AnzahlWurzel2 = Convert.ToUInt64(reader.ReadLine()); //Ein Controller der alles überwacht aber kein Item rausnimmt. 
+                MaxWurzel2 = Convert.ToDecimal(reader.ReadLine());
+                AnzahlEuler = Convert.ToUInt64(reader.ReadLine());
+                MaxEuler = Convert.ToDecimal(reader.ReadLine());
+                AnzahlZeta3 = Convert.ToUInt64(reader.ReadLine());
+                MaxZeta3 = Convert.ToDecimal(reader.ReadLine());
+                reader.Close();
+            }
+            else
+            {
+                StringBuilder connectZeta3 = new StringBuilder(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)); //man erfährt wo die DB liegt. Insbesondere sorgen die Nächsten Zeilen code für die DB
+                connectZeta3.Remove(connectZeta3.Length - 5, 5);
+                connectZeta3.Append("Zeta3.db");
+                StringBuilder zeta3 = new StringBuilder(@"URI=file:");
+                zeta3.Append(connectZeta3);
+                string DBZeta3 = Convert.ToString(zeta3);
+
+                var crDB = new Thread(() => Create_Database(DBZeta3));
+                crDB.Start();
+                dbcreater.Add(crDB);
+
+                StringBuilder connectEuler = new StringBuilder(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)); //man erfährt wo die DB liegt. Insbesondere sorgen die Nächsten Zeilen code für die DB
+                connectEuler.Remove(connectEuler.Length - 5, 5);
+                connectEuler.Append("Euler.db");
+                StringBuilder Euler2 = new StringBuilder(@"URI=file:");
+                Euler2.Append(connectEuler);
+                string DBEuler = Convert.ToString(Euler2);
+
+                var crDB1 = new Thread(() => Create_Database(DBEuler));
+                crDB1.Start();
+                dbcreater.Add(crDB1);
+
+                StringBuilder connectWurzel2 = new StringBuilder(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)); //man erfährt wo die DB liegt. Insbesondere sorgen die Nächsten Zeilen code für die DB
+                connectWurzel2.Remove(connectWurzel2.Length - 5, 5);
+                connectWurzel2.Append("Wurzel2.db");
+                StringBuilder W2 = new StringBuilder(@"URI=file:");
+                W2.Append(connectWurzel2);
+                string DBW2 = Convert.ToString(W2);
+
+                var crDB2 = new Thread(() => Create_Database(DBW2));
+                crDB2.Start();
+                dbcreater.Add(crDB2);
+            }
+        
+            {
+                StringBuilder connectWurzel2 = new StringBuilder(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)); //man erfährt wo die DB liegt. Insbesondere sorgen die Nächsten Zeilen code für die DB
+                connectWurzel2.Remove(connectWurzel2.Length - 5, 5);
+                connectWurzel2.Append("Wurzel2.db");
+                StringBuilder W2 = new StringBuilder(@"URI=file:");
+                W2.Append(connectWurzel2);
+                string DBW2 = Convert.ToString(W2);
+
+                var Wurzel2t = new Thread(() => BulkInsertWurzel2(dbChannelW2, DBW2, cToken));
+                Wurzel2t.Start();
+                worker.Add(Wurzel2t);
+
+            }
+            {
+                StringBuilder connectEuler = new StringBuilder(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)); //man erfährt wo die DB liegt. Insbesondere sorgen die Nächsten Zeilen code für die DB
+                connectEuler.Remove(connectEuler.Length - 5, 5);
+                connectEuler.Append("Euler.db");
+                StringBuilder Euler2 = new StringBuilder(@"URI=file:");
+                Euler2.Append(connectEuler);
+                string DBEuler = Convert.ToString(Euler2);
+
+
+                var DBEulert = new Thread(() => BulkInsertEuler(dbChannelEuler, DBEuler, cToken));
+                DBEulert.Start();
+                worker.Add(DBEulert);
+
+            }
+            {
+                StringBuilder connectZeta3 = new StringBuilder(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)); //man erfährt wo die DB liegt. Insbesondere sorgen die Nächsten Zeilen code für die DB
+                connectZeta3.Remove(connectZeta3.Length - 5, 5);
+                connectZeta3.Append("Zeta3.db");
+                StringBuilder zeta3 = new StringBuilder(@"URI=file:");
+                zeta3.Append(connectZeta3);
+                string DBZeta3 = Convert.ToString(zeta3);
+
+                var DBZeta3t = new Thread(() => BulkInsertZeta3(dbChannelZeta3, DBZeta3, cToken));
+                DBZeta3t.Start();
+                worker.Add(DBZeta3t);
             }
 
         }
