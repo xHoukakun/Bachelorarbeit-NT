@@ -1,426 +1,351 @@
 ﻿using System;
-using System.Linq;
-//diese Klasse habe ich nicht selbst geschrieben, die ist aus dem Internet Kopiert.
-namespace System.Numerics
+using System.Numerics;
+//Das habe ich nicht selbst geschrieben sondern aus dem Internet kopiert. Es steht alles weitere in der Summary. 
+//BigDecimal gibt mir höhere Genauigkeit.
+namespace Common
 {
-	public struct BigDecimal : IConvertible, IFormattable, IComparable, IComparable<BigDecimal>, IEquatable<BigDecimal>
-	{
-		public static readonly BigDecimal MinusOne = new BigDecimal(BigInteger.MinusOne, 0);
-		public static readonly BigDecimal Zero = new BigDecimal(BigInteger.Zero, 0);
-		public static readonly BigDecimal One = new BigDecimal(BigInteger.One, 0);
-
-		private readonly BigInteger _unscaledValue;
-		private readonly int _scale;
-
-		public BigDecimal(double value)
-			: this((decimal)value) { }
-
-		public BigDecimal(float value)
-			: this((decimal)value) { }
-
-		public BigDecimal(decimal value)
-		{
-			var bytes = FromDecimal(value);
-
-			var unscaledValueBytes = new byte[12];
-			Array.Copy(bytes, unscaledValueBytes, unscaledValueBytes.Length);
-
-			var unscaledValue = new BigInteger(unscaledValueBytes);
-			var scale = bytes[14];
-
-			if (bytes[15] == 128)
-				unscaledValue *= BigInteger.MinusOne;
-
-			_unscaledValue = unscaledValue;
-			_scale = scale;
-		}
-
-		public BigDecimal(int value)
-			: this(new BigInteger(value), 0) { }
-
-		public BigDecimal(long value)
-			: this(new BigInteger(value), 0) { }
-
-		public BigDecimal(uint value)
-			: this(new BigInteger(value), 0) { }
-
-		public BigDecimal(ulong value)
-			: this(new BigInteger(value), 0) { }
-
-		public BigDecimal(BigInteger unscaledValue, int scale)
-		{
-			_unscaledValue = unscaledValue;
-			_scale = scale;
-		}
-
-		public BigDecimal(byte[] value)
-		{
-			byte[] number = new byte[value.Length - 4];
-			byte[] flags = new byte[4];
-
-			Array.Copy(value, 0, number, 0, number.Length);
-			Array.Copy(value, value.Length - 4, flags, 0, 4);
-
-			_unscaledValue = new BigInteger(number);
-			_scale = BitConverter.ToInt32(flags, 0);
-		}
-
-		public bool IsEven { get { return _unscaledValue.IsEven; } }
-		public bool IsOne { get { return _unscaledValue.IsOne; } }
-		public bool IsPowerOfTwo { get { return _unscaledValue.IsPowerOfTwo; } }
-		public bool IsZero { get { return _unscaledValue.IsZero; } }
-		public int Sign { get { return _unscaledValue.Sign; } }
-
-		public override string ToString()
-		{
-			var number = _unscaledValue.ToString("G");
-
-			if (_scale > 0)
-				return number.Insert(number.Length - _scale, ".");
-
-			return number;
-		}
-
-		public byte[] ToByteArray()
-		{
-			var unscaledValue = _unscaledValue.ToByteArray();
-			var scale = BitConverter.GetBytes(_scale);
-
-			var bytes = new byte[unscaledValue.Length + scale.Length];
-			Array.Copy(unscaledValue, 0, bytes, 0, unscaledValue.Length);
-			Array.Copy(scale, 0, bytes, unscaledValue.Length, scale.Length);
-
-			return bytes;
-		}
-
-		private static byte[] FromDecimal(decimal d)
-		{
-			byte[] bytes = new byte[16];
-
-			int[] bits = decimal.GetBits(d);
-			int lo = bits[0];
-			int mid = bits[1];
-			int hi = bits[2];
-			int flags = bits[3];
-
-			bytes[0] = (byte)lo;
-			bytes[1] = (byte)(lo >> 8);
-			bytes[2] = (byte)(lo >> 0x10);
-			bytes[3] = (byte)(lo >> 0x18);
-			bytes[4] = (byte)mid;
-			bytes[5] = (byte)(mid >> 8);
-			bytes[6] = (byte)(mid >> 0x10);
-			bytes[7] = (byte)(mid >> 0x18);
-			bytes[8] = (byte)hi;
-			bytes[9] = (byte)(hi >> 8);
-			bytes[10] = (byte)(hi >> 0x10);
-			bytes[11] = (byte)(hi >> 0x18);
-			bytes[12] = (byte)flags;
-			bytes[13] = (byte)(flags >> 8);
-			bytes[14] = (byte)(flags >> 0x10);
-			bytes[15] = (byte)(flags >> 0x18);
-
-			return bytes;
-		}
-
-		#region Operators
-
-		public static bool operator ==(BigDecimal left, BigDecimal right)
-		{
-			return left.Equals(right);
-		}
-
-		public static bool operator !=(BigDecimal left, BigDecimal right)
-		{
-			return !left.Equals(right);
-		}
-
-		public static bool operator >(BigDecimal left, BigDecimal right)
-		{
-			return (left.CompareTo(right) > 0);
-		}
-
-		public static bool operator >=(BigDecimal left, BigDecimal right)
-		{
-			return (left.CompareTo(right) >= 0);
-		}
-
-		public static bool operator <(BigDecimal left, BigDecimal right)
-		{
-			return (left.CompareTo(right) < 0);
-		}
-
-		public static bool operator <=(BigDecimal left, BigDecimal right)
-		{
-			return (left.CompareTo(right) <= 0);
-		}
-
-		public static bool operator ==(BigDecimal left, decimal right)
-		{
-			return left.Equals(right);
-		}
-
-		public static bool operator !=(BigDecimal left, decimal right)
-		{
-			return !left.Equals(right);
-		}
-
-		public static bool operator >(BigDecimal left, decimal right)
-		{
-			return (left.CompareTo(right) > 0);
-		}
-
-		public static bool operator >=(BigDecimal left, decimal right)
-		{
-			return (left.CompareTo(right) >= 0);
-		}
-
-		public static bool operator <(BigDecimal left, decimal right)
-		{
-			return (left.CompareTo(right) < 0);
-		}
-
-		public static bool operator <=(BigDecimal left, decimal right)
-		{
-			return (left.CompareTo(right) <= 0);
-		}
-
-		public static bool operator ==(decimal left, BigDecimal right)
-		{
-			return left.Equals(right);
-		}
-
-		public static bool operator !=(decimal left, BigDecimal right)
-		{
-			return !left.Equals(right);
-		}
-
-		public static bool operator >(decimal left, BigDecimal right)
-		{
-			return (left.CompareTo(right) > 0);
-		}
-
-		public static bool operator >=(decimal left, BigDecimal right)
-		{
-			return (left.CompareTo(right) >= 0);
-		}
-
-		public static bool operator <(decimal left, BigDecimal right)
-		{
-			return (left.CompareTo(right) < 0);
-		}
-
-		public static bool operator <=(decimal left, BigDecimal right)
-		{
-			return (left.CompareTo(right) <= 0);
-		}
-
-		#endregion
-
-		#region Explicity and Implicit Casts
-
-		public static explicit operator byte(BigDecimal value) { return value.ToType<byte>(); }
-		public static explicit operator sbyte(BigDecimal value) { return value.ToType<sbyte>(); }
-		public static explicit operator short(BigDecimal value) { return value.ToType<short>(); }
-		public static explicit operator int(BigDecimal value) { return value.ToType<int>(); }
-		public static explicit operator long(BigDecimal value) { return value.ToType<long>(); }
-		public static explicit operator ushort(BigDecimal value) { return value.ToType<ushort>(); }
-		public static explicit operator uint(BigDecimal value) { return value.ToType<uint>(); }
-		public static explicit operator ulong(BigDecimal value) { return value.ToType<ulong>(); }
-		public static explicit operator float(BigDecimal value) { return value.ToType<float>(); }
-		public static explicit operator double(BigDecimal value) { return value.ToType<double>(); }
-		public static explicit operator decimal(BigDecimal value) { return value.ToType<decimal>(); }
-		public static explicit operator BigInteger(BigDecimal value)
-		{
-			var scaleDivisor = BigInteger.Pow(new BigInteger(10), value._scale);
-			var scaledValue = BigInteger.Divide(value._unscaledValue, scaleDivisor);
-			return scaledValue;
-		}
-
-		public static implicit operator BigDecimal(byte value) { return new BigDecimal(value); }
-		public static implicit operator BigDecimal(sbyte value) { return new BigDecimal(value); }
-		public static implicit operator BigDecimal(short value) { return new BigDecimal(value); }
-		public static implicit operator BigDecimal(int value) { return new BigDecimal(value); }
-		public static implicit operator BigDecimal(long value) { return new BigDecimal(value); }
-		public static implicit operator BigDecimal(ushort value) { return new BigDecimal(value); }
-		public static implicit operator BigDecimal(uint value) { return new BigDecimal(value); }
-		public static implicit operator BigDecimal(ulong value) { return new BigDecimal(value); }
-		public static implicit operator BigDecimal(float value) { return new BigDecimal(value); }
-		public static implicit operator BigDecimal(double value) { return new BigDecimal(value); }
-		public static implicit operator BigDecimal(decimal value) { return new BigDecimal(value); }
-		public static implicit operator BigDecimal(BigInteger value) { return new BigDecimal(value, 0); }
-
-		#endregion
-
-		public T ToType<T>() where T : struct
-		{
-			return (T)((IConvertible)this).ToType(typeof(T), null);
-		}
-
-		object IConvertible.ToType(Type conversionType, IFormatProvider provider)
-		{
-			var scaleDivisor = BigInteger.Pow(new BigInteger(10), this._scale);
-			var remainder = BigInteger.Remainder(this._unscaledValue, scaleDivisor);
-			var scaledValue = BigInteger.Divide(this._unscaledValue, scaleDivisor);
-
-			if (scaledValue > new BigInteger(Decimal.MaxValue))
-				throw new ArgumentOutOfRangeException("value", "The value " + this._unscaledValue + " cannot fit into " + conversionType.Name + ".");
-
-			var leftOfDecimal = (decimal)scaledValue;
-			var rightOfDecimal = ((decimal)remainder) / ((decimal)scaleDivisor);
-
-			var value = leftOfDecimal + rightOfDecimal;
-			return Convert.ChangeType(value, conversionType);
-		}
-
-		public override bool Equals(object obj)
-		{
-			return ((obj is BigDecimal) && Equals((BigDecimal)obj));
-		}
-
-		public override int GetHashCode()
-		{
-			return _unscaledValue.GetHashCode() ^ _scale.GetHashCode();
-		}
-
-		#region IConvertible Members
-
-		TypeCode IConvertible.GetTypeCode()
-		{
-			return TypeCode.Object;
-		}
-
-		bool IConvertible.ToBoolean(IFormatProvider provider)
-		{
-			return Convert.ToBoolean(this);
-		}
-
-		byte IConvertible.ToByte(IFormatProvider provider)
-		{
-			return Convert.ToByte(this);
-		}
-
-		char IConvertible.ToChar(IFormatProvider provider)
-		{
-			throw new InvalidCastException("Cannot cast BigDecimal to Char");
-		}
-
-		DateTime IConvertible.ToDateTime(IFormatProvider provider)
-		{
-			throw new InvalidCastException("Cannot cast BigDecimal to DateTime");
-		}
-
-		decimal IConvertible.ToDecimal(IFormatProvider provider)
-		{
-			return Convert.ToDecimal(this);
-		}
-
-		double IConvertible.ToDouble(IFormatProvider provider)
-		{
-			return Convert.ToDouble(this);
-		}
-
-		short IConvertible.ToInt16(IFormatProvider provider)
-		{
-			return Convert.ToInt16(this);
-		}
-
-		int IConvertible.ToInt32(IFormatProvider provider)
-		{
-			return Convert.ToInt32(this);
-		}
-
-		long IConvertible.ToInt64(IFormatProvider provider)
-		{
-			return Convert.ToInt64(this);
-		}
-
-		sbyte IConvertible.ToSByte(IFormatProvider provider)
-		{
-			return Convert.ToSByte(this);
-		}
-
-		float IConvertible.ToSingle(IFormatProvider provider)
-		{
-			return Convert.ToSingle(this);
-		}
-
-		string IConvertible.ToString(IFormatProvider provider)
-		{
-			return Convert.ToString(this);
-		}
-
-		ushort IConvertible.ToUInt16(IFormatProvider provider)
-		{
-			return Convert.ToUInt16(this);
-		}
-
-		uint IConvertible.ToUInt32(IFormatProvider provider)
-		{
-			return Convert.ToUInt32(this);
-		}
-
-		ulong IConvertible.ToUInt64(IFormatProvider provider)
-		{
-			return Convert.ToUInt64(this);
-		}
-
-		#endregion
-
-		#region IFormattable Members
-
-		public string ToString(string format, IFormatProvider formatProvider)
-		{
-			throw new NotImplementedException();
-		}
-
-		#endregion
-
-		#region IComparable Members
-
-		public int CompareTo(object obj)
-		{
-			if (obj == null)
-				return 1;
-
-			if (!(obj is BigDecimal))
-				throw new ArgumentException("Compare to object must be a BigDecimal", "obj");
-
-			return CompareTo((BigDecimal)obj);
-		}
-
-		#endregion
-
-		#region IComparable<BigDecimal> Members
-
-		public int CompareTo(BigDecimal other)
-		{
-			var unscaledValueCompare = this._unscaledValue.CompareTo(other._unscaledValue);
-			var scaleCompare = this._scale.CompareTo(other._scale);
-
-			// if both are the same value, return the value
-			if (unscaledValueCompare == scaleCompare)
-				return unscaledValueCompare;
-
-			// if the scales are both the same return unscaled value
-			if (scaleCompare == 0)
-				return unscaledValueCompare;
-
-			var scaledValue = BigInteger.Divide(this._unscaledValue, BigInteger.Pow(new BigInteger(10), this._scale));
-			var otherScaledValue = BigInteger.Divide(other._unscaledValue, BigInteger.Pow(new BigInteger(10), other._scale));
-
-			return scaledValue.CompareTo(otherScaledValue);
-		}
-
-		#endregion
-
-		#region IEquatable<BigDecimal> Members
-
-		public bool Equals(BigDecimal other)
-		{
-			return this._scale == other._scale && this._unscaledValue == other._unscaledValue;
-		}
-
-		#endregion
-	}
+    /// <summary>
+    /// Arbitrary precision decimal.
+    /// All operations are exact, except for division. Division never determines more digits than the given precision.
+    /// Source: https://gist.github.com/JcBernack/0b4eef59ca97ee931a2f45542b9ff06d
+    /// Based on https://stackoverflow.com/a/4524254
+    /// Author: Jan Christoph Bernack (contact: jc.bernack at gmail.com)
+    /// License: public domain
+    /// </summary>
+    public struct BigDecimal
+        : IComparable
+        , IComparable<BigDecimal>
+    {
+        /// <summary>
+        /// Specifies whether the significant digits should be truncated to the given precision after each operation.
+        /// </summary>
+        public static bool AlwaysTruncate = false;
+
+        /// <summary>
+        /// Sets the maximum precision of division operations.
+        /// If AlwaysTruncate is set to true all operations are affected.
+        /// </summary>
+        public static int Precision = 50;
+
+        public BigInteger Mantissa { get; set; }
+        public int Exponent { get; set; }
+
+        public BigDecimal(BigInteger mantissa, int exponent)
+            : this()
+        {
+            Mantissa = mantissa;
+            Exponent = exponent;
+            Normalize();
+            if (AlwaysTruncate)
+            {
+                Truncate();
+            }
+        }
+
+        /// <summary>
+        /// Removes trailing zeros on the mantissa
+        /// </summary>
+        public void Normalize()
+        {
+            if (this.Exponent == 0) return;
+
+            if (this.Mantissa.IsZero)
+            {
+                this.Exponent = 0;
+            }
+            else
+            {
+                BigInteger remainder = 0;
+                while (remainder == 0)
+                {
+                    var shortened = BigInteger.DivRem(dividend: this.Mantissa, divisor: 10, remainder: out remainder);
+                    if (remainder != 0)
+                    {
+                        continue;
+                    }
+                    this.Mantissa = shortened;
+                    this.Exponent++;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Truncate the number to the given precision by removing the least significant digits.
+        /// </summary>
+        /// <returns>The truncated number</returns>
+        public BigDecimal Truncate(int precision)
+        {
+            // copy this instance (remember it's a struct)
+            var shortened = this;
+            // save some time because the number of digits is not needed to remove trailing zeros
+            shortened.Normalize();
+
+            // remove the least significant digits, as long as the number of digits is higher than the given Precision
+            int Digits = NumberOfDigits(shortened.Mantissa);
+            int DigitsToRemove = Math.Max(Digits - precision, 0);
+            shortened.Mantissa /= BigInteger.Pow(10, DigitsToRemove);
+            shortened.Exponent += DigitsToRemove;
+
+            // normalize again to make sure there are no trailing zeros left
+            shortened.Normalize();
+            return shortened;
+        }
+
+        public BigDecimal Truncate()
+        {
+            return Truncate(Precision);
+        }
+
+        public BigDecimal Floor()
+        {
+            return Truncate(BigDecimal.NumberOfDigits(Mantissa) + Exponent);
+        }
+
+        public static int NumberOfDigits(BigInteger value)
+        {
+            if (value.IsZero)
+            {
+                return 1;
+            }
+            double NumberOfDigits = BigInteger.Log10(value * value.Sign);
+            if (NumberOfDigits % 1 == 0)
+            {
+                return (int)NumberOfDigits + 1;
+            }
+            return (int)Math.Ceiling(NumberOfDigits);
+        }
+
+        #region Conversions
+
+        public static implicit operator BigDecimal(int value)
+        {
+            return new BigDecimal(value, 0);
+        }
+
+        public static implicit operator BigDecimal(double value)
+        {
+            var mantissa = (BigInteger)value;
+            var exponent = 0;
+            double scaleFactor = 1;
+            while (Math.Abs(value * scaleFactor - (double)mantissa) > 0)
+            {
+                exponent -= 1;
+                scaleFactor *= 10;
+                mantissa = (BigInteger)(value * scaleFactor);
+            }
+            return new BigDecimal(mantissa, exponent);
+        }
+
+        public static implicit operator BigDecimal(decimal value)
+        {
+            var mantissa = (BigInteger)value;
+            var exponent = 0;
+            decimal scaleFactor = 1;
+            while ((decimal)mantissa != value * scaleFactor)
+            {
+                exponent -= 1;
+                scaleFactor *= 10;
+                mantissa = (BigInteger)(value * scaleFactor);
+            }
+            return new BigDecimal(mantissa, exponent);
+        }
+
+        public static explicit operator double(BigDecimal value)
+        {
+            return (double)value.Mantissa * Math.Pow(10, value.Exponent);
+        }
+
+        public static explicit operator float(BigDecimal value)
+        {
+            return Convert.ToSingle((double)value);
+        }
+
+        public static explicit operator decimal(BigDecimal value)
+        {
+            return (decimal)value.Mantissa * (decimal)Math.Pow(10, value.Exponent);
+        }
+
+        public static explicit operator int(BigDecimal value)
+        {
+            return (int)(value.Mantissa * BigInteger.Pow(10, value.Exponent));
+        }
+
+        public static explicit operator uint(BigDecimal value)
+        {
+            return (uint)(value.Mantissa * BigInteger.Pow(10, value.Exponent));
+        }
+
+        #endregion
+
+        #region Operators
+
+        public static BigDecimal operator +(BigDecimal value)
+        {
+            return value;
+        }
+
+        public static BigDecimal operator -(BigDecimal value)
+        {
+            value.Mantissa *= -1;
+            return value;
+        }
+
+        public static BigDecimal operator ++(BigDecimal value)
+        {
+            return value + 1;
+        }
+
+        public static BigDecimal operator --(BigDecimal value)
+        {
+            return value - 1;
+        }
+
+        public static BigDecimal operator +(BigDecimal left, BigDecimal right)
+        {
+            return Add(left, right);
+        }
+
+        public static BigDecimal operator -(BigDecimal left, BigDecimal right)
+        {
+            return Add(left, -right);
+        }
+
+        private static BigDecimal Add(BigDecimal left, BigDecimal right)
+        {
+            return left.Exponent > right.Exponent
+                ? new BigDecimal(AlignExponent(left, right) + right.Mantissa, right.Exponent)
+                : new BigDecimal(AlignExponent(right, left) + left.Mantissa, left.Exponent);
+        }
+
+        public static BigDecimal operator *(BigDecimal left, BigDecimal right)
+        {
+            return new BigDecimal(left.Mantissa * right.Mantissa, left.Exponent + right.Exponent);
+        }
+
+        public static BigDecimal operator /(BigDecimal dividend, BigDecimal divisor)
+        {
+            var exponentChange = Precision - (NumberOfDigits(dividend.Mantissa) - NumberOfDigits(divisor.Mantissa));
+            if (exponentChange < 0)
+            {
+                exponentChange = 0;
+            }
+            dividend.Mantissa *= BigInteger.Pow(10, exponentChange);
+            return new BigDecimal(dividend.Mantissa / divisor.Mantissa, dividend.Exponent - divisor.Exponent - exponentChange);
+        }
+
+        public static BigDecimal operator %(BigDecimal left, BigDecimal right)
+        {
+            return left - right * (left / right).Floor();
+        }
+
+        public static bool operator ==(BigDecimal left, BigDecimal right)
+        {
+            return left.Exponent == right.Exponent && left.Mantissa == right.Mantissa;
+        }
+
+        public static bool operator !=(BigDecimal left, BigDecimal right)
+        {
+            return left.Exponent != right.Exponent || left.Mantissa != right.Mantissa;
+        }
+
+        public static bool operator <(BigDecimal left, BigDecimal right)
+        {
+            return left.Exponent > right.Exponent ? AlignExponent(left, right) < right.Mantissa : left.Mantissa < AlignExponent(right, left);
+        }
+
+        public static bool operator >(BigDecimal left, BigDecimal right)
+        {
+            return left.Exponent > right.Exponent ? AlignExponent(left, right) > right.Mantissa : left.Mantissa > AlignExponent(right, left);
+        }
+
+        public static bool operator <=(BigDecimal left, BigDecimal right)
+        {
+            return left.Exponent > right.Exponent ? AlignExponent(left, right) <= right.Mantissa : left.Mantissa <= AlignExponent(right, left);
+        }
+
+        public static bool operator >=(BigDecimal left, BigDecimal right)
+        {
+            return left.Exponent > right.Exponent ? AlignExponent(left, right) >= right.Mantissa : left.Mantissa >= AlignExponent(right, left);
+        }
+
+        /// <summary>
+        /// Returns the mantissa of value, aligned to the exponent of reference.
+        /// Assumes the exponent of value is larger than of reference.
+        /// </summary>
+        private static BigInteger AlignExponent(BigDecimal value, BigDecimal reference)
+        {
+            return value.Mantissa * BigInteger.Pow(10, value.Exponent - reference.Exponent);
+        }
+
+        #endregion
+
+        #region Additional mathematical functions
+
+        public static BigDecimal Exp(double exponent)
+        {
+            var tmp = (BigDecimal)1;
+            while (Math.Abs(exponent) > 100)
+            {
+                var diff = exponent > 0 ? 100 : -100;
+                tmp *= Math.Exp(diff);
+                exponent -= diff;
+            }
+            return tmp * Math.Exp(exponent);
+        }
+
+        public static BigDecimal Pow(double basis, double exponent)
+        {
+            var tmp = (BigDecimal)1;
+            while (Math.Abs(exponent) > 100)
+            {
+                var diff = exponent > 0 ? 100 : -100;
+                tmp *= Math.Pow(basis, diff);
+                exponent -= diff;
+            }
+            return tmp * Math.Pow(basis, exponent);
+        }
+
+        #endregion
+
+        public override string ToString()
+        {
+            return string.Concat(Mantissa.ToString(), "E", Exponent);
+        }
+
+        public bool Equals(BigDecimal other)
+        {
+            return other.Mantissa.Equals(Mantissa) && other.Exponent == Exponent;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj))
+            {
+                return false;
+            }
+            return obj is BigDecimal && Equals((BigDecimal)obj);
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                return (Mantissa.GetHashCode() * 397) ^ Exponent;
+            }
+        }
+
+        public int CompareTo(object obj)
+        {
+            if (ReferenceEquals(obj, null) || !(obj is BigDecimal))
+            {
+                throw new ArgumentException();
+            }
+            return CompareTo((BigDecimal)obj);
+        }
+
+        public int CompareTo(BigDecimal other)
+        {
+            return this < other ? -1 : (this > other ? 1 : 0);
+        }
+    }
 }
