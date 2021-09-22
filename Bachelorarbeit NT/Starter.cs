@@ -61,7 +61,7 @@ namespace Bachelorarbeit_NT
             {
                 if (File.Exists("Anzahl.txt"))
                 {
-                    string file = "Merken.txt";
+                    string file = "Anzahl.txt";
 
                     StreamReader reader = new StreamReader(file);
                     AnzahlWurzel2 = Convert.ToUInt64(reader.ReadLine()); //Ein Controller der alles überwacht aber kein Item rausnimmt. 
@@ -198,12 +198,13 @@ namespace Bachelorarbeit_NT
 
 
                     decimal result = jobItem.Calc();   //Berechne es.
-                    { switch (s)
+                     
+                        switch (s)
                         {
                             case "RootOfTwo":
 
-                                if (AnzahlWurzel2 == AnzahlWerte)
-                                {
+                                if (AnzahlWurzel2 == AnzahlWerte)  //Hier passiert laufzeit optimierung. Wenn ich n werte habe brauche ich ja nur kleinere Werte. 
+                                {                                  
                                     if (result > MaxWurzel2)
                                     {
 
@@ -282,155 +283,24 @@ namespace Bachelorarbeit_NT
                             default: throw new ArgumentException();
                         }
 
-                    }
-
-
-                }
-                if (jobChan.Count == 0 && producer_finished)
-                {
-                    workerFinished++;
-
-
-                    if (workerFinished == workerNum)
-                    {
-                        worker_finished = true;
-                        Console.WriteLine("Worker Fertig");
-                        resultChan.TryComplete();
-
-                    }
-
-                    while (DBConnect_finished == false)
-                    {
-                        Thread.Sleep(1000);
-
-
-                    }
-
-
                 }
 
 
-                if (cToken.IsCancellationRequested == true)
-                {
+                
+             
 
-                    while (!jobChan.Completion.IsCompleted)
-                    {
-                        if (await jobChan.WaitToReadAsync())
-                        {
-                            while (jobChan.TryRead(out var jobItem))
-                            {
-                                var s = jobItem.Alpha(); // finde raus welches Item du gerade berechnet hast ( alpha)
+                
 
 
-                                decimal result = jobItem.Calc();   //Berechne es.
-                                {
-                                    switch (s)
-                                    {
-                                        case "RootOfTwo":
-
-                                            if (AnzahlWurzel2 == AnzahlWerte)
-                                            {
-                                                if (result > MaxWurzel2)
-                                                {
-
-                                                }
-                                                else if (result < MaxWurzel2)
-                                                {
-                                                    MaxWurzel2 = result;
-                                                    await resultChan.WriteAsync(new Result(s, result));  //Warte bis du auf  Result schreiben kannst
-                                                }
-
-                                            }
-                                            else
-                                            {
-                                                AnzahlWurzel2++;
-                                                if (result > MaxWurzel2)
-                                                {
-                                                    MaxWurzel2 = result;
-                                                }
-
-                                                await resultChan.WriteAsync(new Result(s, result));  //Warte bis du auf Result schreiben kannst
-                                            }
-
-                                            break;
-                                        case "Euler":
-                                            if (AnzahlEuler == AnzahlWerte)
-                                            {
-                                                if (result > MaxEuler)
-                                                {
-
-                                                }
-                                                else if (result < MaxEuler)
-                                                {
-                                                    MaxEuler = result;
-                                                    await resultChan.WriteAsync(new Result(s, result)); //Warte bis du auf Result schreiben kannst
-                                                }
-
-                                            }
-                                            else
-                                            {
-                                                AnzahlEuler++;
-                                                if (result > MaxEuler)
-                                                {
-                                                    MaxEuler = result;
-                                                }
-
-                                                await resultChan.WriteAsync(new Result(s, result)); //Warte bis du auf Result schreiben kannst
-                                            }
-
-                                            break;
-                                        case "Zeta3":
-                                            if (AnzahlZeta3 == AnzahlWerte)
-                                            {
-                                                if (result > MaxZeta3)
-                                                {
-
-                                                }
-                                                else if (result < MaxZeta3)
-                                                {
-                                                    MaxZeta3 = result;
-                                                    await resultChan.WriteAsync(new Result(s, result)); //Warte bis du auf Result schreiben kannst
-                                                }
-
-                                            }
-                                            else
-                                            {
-                                                AnzahlZeta3++;
-                                                if (result > MaxZeta3)
-                                                {
-                                                    MaxZeta3 = result;
-                                                }
-
-                                                await resultChan.WriteAsync(new Result(s, result)); //Warte bis du auf Result schreiben kannst
-                                            }
-
-                                            break;
-                                        default: throw new ArgumentException();
-                                    }
-
-                                }
-                            }
-
-                        }
-                    }
-                    Thread.Sleep(2000);
-                    resultChan.TryComplete();
-                    while (true)
-                    {
-                        Thread.Sleep(2000);
-                        if (sicheres_beenden)
-                        {
-                            return;
-                        }
-                    }
-
-
-                }
-
+               
 
             }
-
-
+            workerFinished++;
+            if(workerNum==workerFinished)
+            {
+                resultChan.TryComplete();
+            }
+            return;
         }
         public async void JobProducer(ChannelWriter<Coordinate> jobChan, CancellationToken cToken, ulong ende)
         {
@@ -476,33 +346,28 @@ namespace Bachelorarbeit_NT
                     AnzahlJobs++;
                     if (cToken.IsCancellationRequested == true)
                     {
+                        
+                        
                         jobChan.TryComplete();
-                        producer = true;
-                        while (true)
-                        {
+                       
                            
 
-                            if (sicheres_beenden)
-                            {        //hier werden alle wichtigen Daten zur Aufnahme der nächsten Session gespeichert.
-                                StreamWriter sw = new StreamWriter("Merken" + ".txt");
-                                sw.WriteLine(x);   //erst x
-                                sw.WriteLine(y);    //dann y
-                                sw.WriteLine(AnzahlJobs); //Dann die Anzahl an Jobs
-                                sw.Close();
-                                StreamWriter sw2 = new StreamWriter("Anzahl.txt");
-                                sw2.WriteLine(AnzahlWurzel2);
-                                sw2.WriteLine(MaxWurzel2);
-                                sw2.WriteLine(AnzahlEuler);
-                                sw2.WriteLine(MaxEuler);
-                                sw2.WriteLine(AnzahlZeta3);
-                                sw2.WriteLine(MaxZeta3);
-                                sw2.Close();
-                                return;
+                            
+                            
+                                   //hier werden alle wichtigen Daten zur Aufnahme der nächsten Session gespeichert.
+                       StreamWriter sw = new StreamWriter("Merken" + ".txt");
+                       sw.WriteLine(x);   //erst x
+                       sw.WriteLine(y);    //dann y
+                       sw.WriteLine(AnzahlJobs); //Dann die Anzahl an Jobs
+                       sw.Close();
+                             
+                                
+                        return;
 
-                            }
-                            Thread.Sleep(500);
+                            
+                            
 
-                        }
+                        
 
                     }
                 }
@@ -514,13 +379,9 @@ namespace Bachelorarbeit_NT
 
 
 
-            producer_finished = true;
-            Console.WriteLine("Producer Fertig");
-            while (DBConnect_finished == false)
-            {
-                Thread.Sleep(1000);
-            }
-            
+            jobChan.TryComplete();
+
+            return;
             //jobChan.Complete();  //wenn die Jobs fertig geladen wurden. funktioniert der JobChan.Complete wirklich so? Bei mir sieht es nach einer Löschung des Channels aus....
         }
         public class Result  //hier wird ein Result datentyp definiert der besteht aus dem result der rechnung und dem "term" der rechnung da der term nur von Alpha abhängt gebe ich Alpha zurück
@@ -537,7 +398,7 @@ namespace Bachelorarbeit_NT
         {
             public List<Decimal> r = new List<Decimal>();
             public string type;
-            public Listb(List<Decimal> _r, string t)
+            public Listb(List<Decimal> _r, string t) //eine Liste wird mit Call by referenz übergeben das müssen wir ändern da wir ansonsten ein problem bekommen
             {
                 for (int i = 0; i < _r.Count; i++)
                 {
@@ -569,12 +430,11 @@ namespace Bachelorarbeit_NT
             List<Decimal> RootOfTwo = new List<Decimal>();
             List<Decimal> Zeta3 = new List<Decimal>();
             List<Decimal> Euler = new List<Decimal>();
-            while (!resultChan.Completion.IsCompleted)    //diese beiden While Schleifen sorgen insbesondere dafür, dass es async ist.  Und man kein Deadlock szenario bekomm ( Auch bekannt als Philosophen Problem)
+            while (await resultChan.WaitToReadAsync())    //diese beiden While Schleifen sorgen insbesondere dafür, dass es async ist.  Und man kein Deadlock szenario bekomm ( Auch bekannt als Philosophen Problem)
             {
 
-                if (await resultChan.WaitToReadAsync())
-                {
-                    while (resultChan.TryRead(out var jobItem))
+               
+                    while (resultChan.TryRead(out var jobItem) && cToken.IsCancellationRequested == false)
                     {
 
                         string s = jobItem.type;
@@ -612,70 +472,91 @@ namespace Bachelorarbeit_NT
 
 
 
-                }
+                
                 if (cToken.IsCancellationRequested == true)
                 {
-                    while (!resultChan.Completion.IsCompleted)    //diese beiden While Schleifen sorgen insbesondere dafür, dass es async ist.  Und man kein Deadlock szenario bekomm ( Auch bekannt als Philosophen Problem)
+
+
+                    while (await resultChan.WaitToReadAsync())  //diese beiden While Schleifen sorgen insbesondere dafür, dass es async ist.  Und man kein Deadlock szenario bekomm ( Auch bekannt als Philosophen Problem)
                     {
-
-                        if (await resultChan.WaitToReadAsync())
+                        while (resultChan.TryRead(out var jobItem))
                         {
-                            while (resultChan.TryRead(out var jobItem))
+
+
+
+
+                            string s = jobItem.type;
+                            decimal u = jobItem.result;
+                            switch (s)
                             {
+                                case "RootOfTwo":
+                                    RootOfTwo.Add(u);
+                                    if (RootOfTwo.Count == 1_000_000)
+                                    {
+                                        await DBWurzel2.WriteAsync(new Listb(RootOfTwo, "RootOfTwo"));
+                                        RootOfTwo.Clear();
 
-                                string s = jobItem.type;
-                                decimal u = jobItem.result;
-                                switch (s)
-                                {
-                                    case "RootOfTwo":
-                                        RootOfTwo.Add(u);
-                                        if (RootOfTwo.Count == 200_000)
-                                        {
-                                            await DBWurzel2.WriteAsync(new Listb(RootOfTwo, "RootOfTwo"));
-                                            RootOfTwo.Clear();
-
-                                        }
-                                        break;
-                                    case "Zeta3":
-                                        Zeta3.Add(u);
-                                        if (Zeta3.Count == 200_000)
-                                        {
-                                            await DBZeta3.WriteAsync(new Listb(Zeta3, "Zeta3"));
-                                            Zeta3.Clear();
-                                        }
-                                        break;
-                                    case "Euler":
-                                        Euler.Add(u);
-                                        if (Euler.Count == 200_000)
-                                        {
-                                            await DBEuler.WriteAsync(new Listb(Euler, "Euler"));
-                                            Euler.Clear();
-                                        }
-                                        break;
-                                    default: throw new ArgumentException();
-                                }
+                                    }
+                                    break;
+                                case "Zeta3":
+                                    Zeta3.Add(u);
+                                    if (Zeta3.Count == 1_000_000)
+                                    {
+                                        await DBZeta3.WriteAsync(new Listb(Zeta3, "Zeta3"));
+                                        Zeta3.Clear();
+                                    }
+                                    break;
+                                case "Euler":
+                                    Euler.Add(u);
+                                    if (Euler.Count == 1_000_000)
+                                    {
+                                        await DBEuler.WriteAsync(new Listb(Euler, "Euler"));
+                                        Euler.Clear();
+                                    }
+                                    break;
+                                default: throw new ArgumentException();
                             }
-
-
-
                         }
 
 
+
                     }
-                    await DBWurzel2.WriteAsync(new Listb(RootOfTwo, "RootOfTwo"));
-                    RootOfTwo.Clear();
-                    await DBZeta3.WriteAsync(new Listb(Zeta3, "Zeta3"));
-                    Zeta3.Clear();
-                    await DBEuler.WriteAsync(new Listb(Euler, "Euler"));
-                    Euler.Clear();
-                    while (true)
+                    if (resultChan.Count == 0)
                     {
-                        if (sicheres_beenden)
+                        await DBEuler.WriteAsync(new Listb(Euler, "Euler"));
+                        Euler.Clear();
+                        await DBZeta3.WriteAsync(new Listb(Zeta3, "Zeta3"));
+                        Zeta3.Clear();
+                        await DBWurzel2.WriteAsync(new Listb(RootOfTwo, "RootOfTwo"));
+                        RootOfTwo.Clear();
+
+                    }
+
+                
+
+            
+ 
+                   
+                        if (RootOfTwo.Count != 0)
                         {
+                            await DBWurzel2.WriteAsync(new Listb(RootOfTwo, "RootOfTwo"));
+                            RootOfTwo.Clear();
+                        }
+                        if(Euler.Count!=0)
+                        {
+                            await DBEuler.WriteAsync(new Listb(Euler, "Euler"));
+                            Euler.Clear();
+                        }
+                        if(Zeta3.Count!=0)
+                        {
+                            await DBZeta3.WriteAsync(new Listb(Zeta3, "Zeta3"));
+                            Zeta3.Clear();
+                        }
+                        
                             Binder++;
                             if (Binder == 4)
                             {
-                                binder_finished = true;
+                                
 
                                 DBEuler.TryComplete();
                                 DBZeta3.TryComplete();
@@ -687,9 +568,9 @@ namespace Bachelorarbeit_NT
                                 return;
                             }
                             
-                        }
-                        Thread.Sleep(2000);
-                    }
+                        
+                        
+                    
 
                 }
             
@@ -701,21 +582,33 @@ namespace Bachelorarbeit_NT
 
 
 
+            }      
+            if (RootOfTwo.Count != 0)
+            {
+                await DBWurzel2.WriteAsync(new Listb(RootOfTwo, "RootOfTwo"));
+                RootOfTwo.Clear();
             }
-            await DBWurzel2.WriteAsync(new Listb(RootOfTwo, "RootOfTwo"));
-            await DBZeta3.WriteAsync(new Listb(Zeta3, "Zeta3"));
-            await DBEuler.WriteAsync(new Listb(Euler, "Euler"));
-
+            if (Euler.Count != 0)
+            {
+                await DBEuler.WriteAsync(new Listb(Euler, "Euler"));
+                Euler.Clear();
+            }
+            if (Zeta3.Count != 0)
+            {
+                await DBZeta3.WriteAsync(new Listb(Zeta3, "Zeta3"));
+                Zeta3.Clear();
+            }
             Binder++;
             if (Binder == 4)
             {
-                binder_finished = true;
+               
 
                 DBEuler.TryComplete();
                 DBZeta3.TryComplete();
                 DBWurzel2.TryComplete();
-            }
 
+            }
+            return;
         }
         /// <summary>
         /// Hier werden die Tables erst gedroppt und dann neu erstellt. Somit fängt die Berechnung von neu an. Man hat keine Inkonsistenten Daten
@@ -789,14 +682,15 @@ namespace Bachelorarbeit_NT
         /// <param name="cToken"></param>
         public async void BulkInsert(ChannelReader<Listb> dbChannel, string Connect, CancellationToken cToken) // https://docs.microsoft.com/en-us/dotnet/standard/data/sqlite/bulk-insert 
         {
-            Thread.Sleep(1000);
-            while (!dbChannel.Completion.IsCompleted)    //diese beiden While Schleifen sorgen insbesondere dafür, dass es async ist.  Und man kein Deadlock szenario bekomm ( Auch bekannt als Philosophen Problem)
+            
+            while( await dbChannel.WaitToReadAsync())   //diese beiden While Schleifen sorgen insbesondere dafür, dass es async ist.  Und man kein Deadlock szenario bekomm ( Auch bekannt als Philosophen Problem)
             { //versuche es rauszulesen
                 while (dbChannel.TryRead(out var jobItem))
                 {
+                    
 
                     var connection = new SQLiteConnection(Connect);
-                    await connection.OpenAsync();
+                    connection.Open();
 
 
                     using (var transaction = connection.BeginTransaction())
@@ -808,15 +702,15 @@ namespace Bachelorarbeit_NT
                         switch (Tabelname)
                         {
                             case "RootOfTwo":
-                                command.CommandText = @"INSERT INTO Wurzel2(Value) VALUES(@Value) ";
+                                command.CommandText = @"INSERT or REPLACE INTO Wurzel2(Value) VALUES(@Value) ";
                                 command.Prepare();
                                 break;
                             case "Euler":
-                                command.CommandText = @"INSERT INTO Eulersche_Zahl(Value) VALUES(@Value) ";
+                                command.CommandText = @"INSERT or REPLACE INTO Eulersche_Zahl(Value) VALUES(@Value) ";
                                 command.Prepare();
                                 break;
                             case "Zeta3":
-                                command.CommandText = @"INSERT INTO Zeta3(Value) VALUES(@Value) ";
+                                command.CommandText = @"INSERT or REPLACE INTO Zeta3(Value) VALUES(@Value) ";
                                 command.Prepare();
                                 break;
                             default: throw new ArgumentException();
@@ -831,22 +725,9 @@ namespace Bachelorarbeit_NT
 
                             command.Parameters.AddWithValue("@Value", Value[i]);
                             command.Prepare();
-                            try
-                            { 
-                                await command.ExecuteNonQueryAsync();
+                            command.ExecuteNonQuery();
                                 
-                            }
-                            catch(Exception d)
-                            {
-                                if(Convert.ToString(d).Contains("UNIQUE"))
-                                {
-                                    
-                                }
-                                else
-                                {
-                                    throw new InvalidDataException();
-                                }
-                            }
+                            
 
 
                         }
@@ -862,97 +743,18 @@ namespace Bachelorarbeit_NT
 
 
                 }
-                if (binder_finished == true && dbChannel.Count == 0)
-                {
-                    Console.WriteLine("DB Fertig");
-                    DBConnect_finished = true;
-                }
-                if (cToken.IsCancellationRequested == true)
-                {
-
-                    while (!dbChannel.Completion.IsCompleted)    //diese beiden While Schleifen sorgen insbesondere dafür, dass es async ist.  Und man kein Deadlock szenario bekomm ( Auch bekannt als Philosophen Problem)
-                    { //versuche es rauszulesen
-                        while (dbChannel.TryRead(out var jobItem))
-                        {
-
-                            var connection = new SQLiteConnection(Connect);
-                            await connection.OpenAsync();
-
-
-                            using (var transaction = connection.BeginTransaction())
-                            {
-                                string Tabelname = jobItem.type;
-                                List<decimal> Value = jobItem.getList();
-
-                                var command = connection.CreateCommand();
-                                switch (Tabelname)
-                                {
-                                    case "RootOfTwo":
-                                        command.CommandText = @"INSERT INTO Wurzel2(Value) VALUES(@Value) ";
-                                        command.Prepare();
-                                        break;
-                                    case "Euler":
-                                        command.CommandText = @"INSERT INTO Eulersche_Zahl(Value) VALUES(@Value) ";
-                                        command.Prepare();
-                                        break;
-                                    case "Zeta3":
-                                        command.CommandText = @"INSERT INTO Zeta3(Value) VALUES(@Value) ";
-                                        command.Prepare();
-                                        break;
-                                    default: throw new ArgumentException();
-                                }
-                                var parameter = command.CreateParameter();
-                                parameter.ParameterName = "@Value";
-                                command.Parameters.Add(parameter);
-
-                                for (int i = 0; i < Value.Count(); i++)
-                                {
-
-
-                                    command.Parameters.AddWithValue("@Value", Value[i]);
-                                    command.Prepare();
-                                    try
-                                    {
-                                        await command.ExecuteNonQueryAsync();
-                                    }
-                                    catch(Exception d)
-                                    {
-                                        Console.WriteLine(d);
-                                    }
-
-                                }
-
-                                transaction.Commit();
-                                connection.Close();
-                                var gc = new Thread(() => GC.Collect());
-                                gc.Start();
-
-
-                            }
-
-
-
-                        }
-                        if(sicheres_beenden)
-                        {
-                            return;
-                        }
-                    }
-                    while (true)
-                    {
-                        if(sicheres_beenden)
-                        {
-                            return;
-                        }
-                    }
-                }
+            
+               
+                    
+               
+                
             
         
     
 
 
             }
-           
+            return;
 
         }
         public async void BulkInsertWurzel2(ChannelReader<Listb> dbChannel,string Connect,CancellationToken cToken)
@@ -978,6 +780,7 @@ namespace Bachelorarbeit_NT
         /// <param name="cToken"></param>
         public async void Controller(ChannelReader<Coordinate> jobChannel, ChannelReader<Result> ResultChannel, ChannelReader<Listb> DBA, ChannelReader<Listb> DBB, ChannelReader<Listb> DBC,CancellationToken cToken)
         {
+            
             while(cToken.IsCancellationRequested==false) //wenn der Token false ist dann wird nichts gemacht.
             {
                 Thread.Sleep(1000);
@@ -986,18 +789,34 @@ namespace Bachelorarbeit_NT
             {
                 while (true)
                 {
-                    if (producer == true)//wenn alle Channels geschlossen sind dann wird das ganze Programm geschlossen
+
+                    if (jobChannel.Completion.IsCompleted && ResultChannel.Completion.IsCompleted && DBA.Completion.IsCompleted && DBB.Completion.IsCompleted && DBC.Completion.IsCompleted) 
                     {
-                        if (jobChannel.Count == 0 && ResultChannel.Count == 0 && DBA.Count == 0 && DBB.Count == 0 && DBC.Count == 0)
-                        {
 
-                            sicheres_beenden = true;
-                            Thread.Sleep(10000); //Nach 10 Sekunden wird ein Bool auf True gesetzt der alles beendet.
-                            Form1.save();
-                            return;
 
-                        }
+                           
+
+                           
+                                
+                                StreamWriter sw2 = new StreamWriter("Anzahl.txt");
+                                sw2.WriteLine(AnzahlWurzel2);
+                                sw2.WriteLine(MaxWurzel2);
+                                sw2.WriteLine(AnzahlEuler);
+                                sw2.WriteLine(MaxEuler);
+                                sw2.WriteLine(AnzahlZeta3);
+                                sw2.WriteLine(MaxZeta3);
+                                sw2.Close();
+                                Thread.Sleep(10000);
+                                Form1.save();
+                                return;
+                            
+                             
+
+                            
+                            
+
                     }
+                    
                     Thread.Sleep(1000);
 
                 }
