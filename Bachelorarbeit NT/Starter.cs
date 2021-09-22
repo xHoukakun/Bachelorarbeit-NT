@@ -434,16 +434,16 @@ namespace Bachelorarbeit_NT
             {
 
                
-                    while (resultChan.TryRead(out var jobItem) && cToken.IsCancellationRequested == false)
+                    while (resultChan.TryRead(out var jobItem))
                     {
 
-                        string s = jobItem.type;
-                        decimal u = jobItem.result;
+                        string s = jobItem.type;   //in Welche Liste muss es einsortiert werden
+                        decimal u = jobItem.result; //das ergebnis
                         switch (s)
                         {
                             case "RootOfTwo":
                                 RootOfTwo.Add(u);
-                                if (RootOfTwo.Count == 200_000)
+                                if (RootOfTwo.Count == 200_000) //Päckchen von 200_000 Einheiten. Für Bulk Insert
                                 {
                                     await DBWurzel2.WriteAsync(new Listb(RootOfTwo, "RootOfTwo"));
                                     RootOfTwo.Clear();
@@ -466,124 +466,11 @@ namespace Bachelorarbeit_NT
                                     Euler.Clear();
                                 }
                                 break;
-                            default: throw new ArgumentException();
+                            default: throw new ArgumentException(); //Falls es ein s gibt welches zu nichts passt
                         }
                     }
-
-
-
-                
-                if (cToken.IsCancellationRequested == true)
-                {
-
-
-                    while (await resultChan.WaitToReadAsync())  //diese beiden While Schleifen sorgen insbesondere dafür, dass es async ist.  Und man kein Deadlock szenario bekomm ( Auch bekannt als Philosophen Problem)
-                    {
-                        while (resultChan.TryRead(out var jobItem))
-                        {
-
-
-
-
-                            string s = jobItem.type;
-                            decimal u = jobItem.result;
-                            switch (s)
-                            {
-                                case "RootOfTwo":
-                                    RootOfTwo.Add(u);
-                                    if (RootOfTwo.Count == 1_000_000)
-                                    {
-                                        await DBWurzel2.WriteAsync(new Listb(RootOfTwo, "RootOfTwo"));
-                                        RootOfTwo.Clear();
-
-                                    }
-                                    break;
-                                case "Zeta3":
-                                    Zeta3.Add(u);
-                                    if (Zeta3.Count == 1_000_000)
-                                    {
-                                        await DBZeta3.WriteAsync(new Listb(Zeta3, "Zeta3"));
-                                        Zeta3.Clear();
-                                    }
-                                    break;
-                                case "Euler":
-                                    Euler.Add(u);
-                                    if (Euler.Count == 1_000_000)
-                                    {
-                                        await DBEuler.WriteAsync(new Listb(Euler, "Euler"));
-                                        Euler.Clear();
-                                    }
-                                    break;
-                                default: throw new ArgumentException();
-                            }
-                        }
-
-
-
-                    }
-                    if (resultChan.Count == 0)
-                    {
-                        await DBEuler.WriteAsync(new Listb(Euler, "Euler"));
-                        Euler.Clear();
-                        await DBZeta3.WriteAsync(new Listb(Zeta3, "Zeta3"));
-                        Zeta3.Clear();
-                        await DBWurzel2.WriteAsync(new Listb(RootOfTwo, "RootOfTwo"));
-                        RootOfTwo.Clear();
-
-                    }
-
-                
-
-            
- 
-                   
-                        if (RootOfTwo.Count != 0)
-                        {
-                            await DBWurzel2.WriteAsync(new Listb(RootOfTwo, "RootOfTwo"));
-                            RootOfTwo.Clear();
-                        }
-                        if(Euler.Count!=0)
-                        {
-                            await DBEuler.WriteAsync(new Listb(Euler, "Euler"));
-                            Euler.Clear();
-                        }
-                        if(Zeta3.Count!=0)
-                        {
-                            await DBZeta3.WriteAsync(new Listb(Zeta3, "Zeta3"));
-                            Zeta3.Clear();
-                        }
-                        
-                            Binder++;
-                            if (Binder == 4)
-                            {
-                                
-
-                                DBEuler.TryComplete();
-                                DBZeta3.TryComplete();
-                                DBWurzel2.TryComplete();
-                                return;
-                            }
-                            else
-                            {
-                                return;
-                            }
-                            
-                        
-                        
-                    
-
-                }
-            
-
-                
-
-
-
-
-
-
             }      
-            if (RootOfTwo.Count != 0)
+            if (RootOfTwo.Count != 0)  //in der Liste könnten Reste sein. Diese sollen natürlich in die DB geschrieben werden.
             {
                 await DBWurzel2.WriteAsync(new Listb(RootOfTwo, "RootOfTwo"));
                 RootOfTwo.Clear();
@@ -599,7 +486,7 @@ namespace Bachelorarbeit_NT
                 Zeta3.Clear();
             }
             Binder++;
-            if (Binder == 4)
+            if (Binder == 4)  //Wenn alle Fertig sind schließt der Letzte die Channels.
             {
                
 
@@ -629,6 +516,7 @@ namespace Bachelorarbeit_NT
                 cmd.ExecuteNonQuery();
                 Console.WriteLine("Dropped Tables");
                 //SQL befehle für das ERstellen der Datenbank
+                //Create Table der PK ist das Ergebnis also Value mit hoher genauigkeit. und ohne RowID ( Die Datenbank soll möglichst klein gehalten werden)
                 cmd.CommandText = @"CREATE TABLE Wurzel2 (
 
                  
@@ -689,20 +577,20 @@ namespace Bachelorarbeit_NT
                 {
                     
 
-                    var connection = new SQLiteConnection(Connect);
-                    connection.Open();
+                    var connection = new SQLiteConnection(Connect); //SQLite wrapper
+                    connection.Open();  //hier wird die Connection zur Datenbank geöffnet
 
 
-                    using (var transaction = connection.BeginTransaction())
+                    using (var transaction = connection.BeginTransaction())  //eine Transaktion wird begonnen 
                     {
-                        string Tabelname = jobItem.type;
-                        List<decimal> Value = jobItem.getList();
+                        string Tabelname = jobItem.type; 
+                        List<decimal> Value = jobItem.getList();  //call by refrence 
 
                         var command = connection.CreateCommand();
                         switch (Tabelname)
                         {
                             case "RootOfTwo":
-                                command.CommandText = @"INSERT or REPLACE INTO Wurzel2(Value) VALUES(@Value) ";
+                                command.CommandText = @"INSERT or REPLACE INTO Wurzel2(Value) VALUES(@Value) "; //falls diese Zahl schon existiert wird sie erstetzt. Die Zahl kann nur einmal vor kommen.
                                 command.Prepare();
                                 break;
                             case "Euler":
@@ -725,17 +613,17 @@ namespace Bachelorarbeit_NT
 
                             command.Parameters.AddWithValue("@Value", Value[i]);
                             command.Prepare();
-                            command.ExecuteNonQuery();
+                            command.ExecuteNonQuery();  //Bulk insert
                                 
                             
 
 
                         }
 
-                        transaction.Commit();
-                        connection.Close();
+                        transaction.Commit(); //Transaktion wird durchgeführt
+                        connection.Close(); //die Connection wird geschlossen
                         var gc = new Thread(() => GC.Collect());
-                        gc.Start();
+                        gc.Start();   //hier lasse ich den Garbage Collector laufen. das reduziert die Speicherauslastung. 
 
 
                     }
@@ -789,7 +677,7 @@ namespace Bachelorarbeit_NT
             {
                 while (true)
                 {
-
+                    
                     if (jobChannel.Completion.IsCompleted && ResultChannel.Completion.IsCompleted && DBA.Completion.IsCompleted && DBB.Completion.IsCompleted && DBC.Completion.IsCompleted) 
                     {
 
@@ -798,7 +686,7 @@ namespace Bachelorarbeit_NT
 
                            
                                 
-                                StreamWriter sw2 = new StreamWriter("Anzahl.txt");
+                                StreamWriter sw2 = new StreamWriter("Anzahl.txt");  //wenn alles Geschlossen ist werden einzelne Werte gespeichert.
                                 sw2.WriteLine(AnzahlWurzel2);
                                 sw2.WriteLine(MaxWurzel2);
                                 sw2.WriteLine(AnzahlEuler);
