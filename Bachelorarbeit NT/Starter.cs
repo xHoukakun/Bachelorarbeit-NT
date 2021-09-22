@@ -7,6 +7,7 @@ using System.Threading.Channels;
 using System.Data.SQLite;
 using System.IO;
 using System.Numerics;
+using System.Data.Sql;
 
 
 
@@ -30,8 +31,8 @@ namespace Bachelorarbeit_NT
         public int Binder = 0;    
         ulong AnzahlJobs = 0;
         ulong AnzahlWerte = 0;
-
-
+        ulong AnzahlDB = 0;
+        private int Counter = 200_000;
 
         private ulong AnzahlWurzel2;
         private decimal MaxWurzel2;
@@ -39,24 +40,21 @@ namespace Bachelorarbeit_NT
         private decimal MaxEuler;
         private ulong AnzahlZeta3;
         private decimal MaxZeta3;
-        public bool bZeta3=false;
-        public bool bEuler = false;
-        public bool bwurzel2 = false;
-
+    
         public Starter(int workerNum, ulong N, CancellationToken cToken)
         {
 
             AnzahlWerte = N;
             this.workerNum = workerNum;
-            Channel<Coordinate> jobChannel = Channel.CreateBounded<Coordinate>(64);  //erstelle den Job Queue 8388608
+            Channel<Coordinate> jobChannel = Channel.CreateBounded<Coordinate>(65536);  //erstelle den Job Queue 8388608
             Channel<Result> resultChannel = Channel.CreateBounded<Result>(33554432);   //erstelle die result queue 
             Channel<Listb> dbChannelW2 = Channel.CreateBounded<Listb>(8); //erstelle einen DB channel              
             Channel<Listb> dbChannelEuler = Channel.CreateBounded<Listb>(8);
             Channel<Listb> dbChannelZeta3 = Channel.CreateBounded<Listb>(8);
 
+            
 
-
-                Database_Management(dbChannelW2, dbChannelEuler, dbChannelZeta3, cToken); //hier wird die Datenbank erstellt. Ich habe das in eine Methode ausgelagert für die Lesbarkeit
+            Database_Management(dbChannelW2, dbChannelEuler, dbChannelZeta3, cToken); //hier wird die Datenbank erstellt. Ich habe das in eine Methode ausgelagert für die Lesbarkeit
 
             {
                 var Binder1 = new Thread(() => binder(resultChannel, dbChannelEuler, dbChannelW2, dbChannelZeta3, cToken));// lambda ausdruck um den thread zu initialisieren.
@@ -204,6 +202,7 @@ namespace Bachelorarbeit_NT
 
             }
             workerFinished++;
+            Thread.Sleep(2000);
             if(workerNum==workerFinished)
             {
                 resultChan.TryComplete();
@@ -351,7 +350,7 @@ namespace Bachelorarbeit_NT
                         {
                             case "RootOfTwo":
                                 RootOfTwo.Add(u);
-                                if (RootOfTwo.Count == 200_000) //Päckchen von 200_000 Einheiten. Für Bulk Insert
+                                if (RootOfTwo.Count == Counter) //Päckchen von 200_000 Einheiten. Für Bulk Insert
                                 {
                                     await DBWurzel2.WriteAsync(new Listb(RootOfTwo, "RootOfTwo"));
                                     RootOfTwo.Clear();
@@ -360,7 +359,7 @@ namespace Bachelorarbeit_NT
                                 break;
                             case "Zeta3":
                                 Zeta3.Add(u);
-                                if (Zeta3.Count == 200_000)
+                                if (Zeta3.Count == Counter)
                                 {
                                     await DBZeta3.WriteAsync(new Listb(Zeta3, "Zeta3"));
                                     Zeta3.Clear();
@@ -368,7 +367,7 @@ namespace Bachelorarbeit_NT
                                 break;
                             case "Euler":
                                 Euler.Add(u);
-                                if (Euler.Count == 200_000)
+                                if (Euler.Count == Counter)
                                 {
                                     await DBEuler.WriteAsync(new Listb(Euler, "Euler"));
                                     Euler.Clear();
@@ -394,6 +393,7 @@ namespace Bachelorarbeit_NT
                 Zeta3.Clear();
             }
             Binder++;
+            Thread.Sleep(2000);
             if (Binder == 4)  //Wenn alle Fertig sind schließt der Letzte die Channels.
             {
                
@@ -429,7 +429,7 @@ namespace Bachelorarbeit_NT
 
                  
 
-                    Value DECIMAL(65,30) NOT NULL UNIQUE,
+                    Value REAL NOT NULL UNIQUE,
                     PRIMARY KEY(Value)
                     )WITHOUT ROWID;";
                 cmd.ExecuteNonQuery();
@@ -437,7 +437,7 @@ namespace Bachelorarbeit_NT
 
                     
 
-                    Value DECIMAL(65,30) NOT NULL UNIQUE,
+                    Value REAL NOT NULL UNIQUE,
                     PRIMARY KEY(Value)
                 )WITHOUT ROWID;";
                 cmd.ExecuteNonQuery();
@@ -445,7 +445,7 @@ namespace Bachelorarbeit_NT
 
                     
 
-                    Value DECIMAL(65,30) NOT NULL UNIQUE,
+                    Value REAL NOT NULL UNIQUE,
                     PRIMARY KEY(Value)
                 )WITHOUT ROWID;";
                 cmd.ExecuteNonQuery();
@@ -550,23 +550,23 @@ namespace Bachelorarbeit_NT
 
 
             }
-            return;
+            AnzahlDB++;
 
         }
         public async void BulkInsertWurzel2(ChannelReader<Listb> dbChannel,string Connect,CancellationToken cToken)
         {
             BulkInsert(dbChannel, Connect, cToken); //Rufe Buld Insert mit dem jeweiligen Channel auf( Code redundanz)
-            bwurzel2 = true;        
+                   
         }
         public async void BulkInsertZeta3(ChannelReader<Listb> dbChannel, string Connect, CancellationToken cToken)
         {
             BulkInsert(dbChannel, Connect, cToken); //Rufe Buld Insert mit dem jeweiligen Channel auf( Code redundanz)
-            bZeta3 = true;
+            
         }
         public async void BulkInsertEuler(ChannelReader<Listb> dbChannel, string Connect, CancellationToken cToken)
         {
             BulkInsert(dbChannel, Connect, cToken); //Rufe Buld Insert mit dem jeweiligen Channel auf( Code redundanz)
-            bEuler = true;       
+              
         }
         /// <summary>
         /// Der Controller wird darauf verwendet das falls ein Cancel Requested wird alles noch gesaved wird.
@@ -583,13 +583,16 @@ namespace Bachelorarbeit_NT
             while(cToken.IsCancellationRequested==false) //wenn der Token false ist dann wird nichts gemacht.
             {
                 Thread.Sleep(1000);
+                Console.WriteLine(AnzahlDB);
             }
             if (cToken.IsCancellationRequested == true) //wenn der Token auf True fällt dann wird ein sicherer abbruch initialisiert.
             {
+                Counter = 1_000_000;
                 while (true)
                 {
-                    
-                    if ((jobChannel.Completion.IsCompleted && ResultChannel.Completion.IsCompleted && DBA.Completion.IsCompleted && DBB.Completion.IsCompleted && DBC.Completion.IsCompleted) || (bwurzel2&&bEuler&&bZeta3)) 
+
+                    Console.WriteLine(AnzahlDB);
+                    if ((jobChannel.Completion.IsCompleted && ResultChannel.Completion.IsCompleted && DBA.Completion.IsCompleted && DBB.Completion.IsCompleted && DBC.Completion.IsCompleted)) 
                     {
 
 
