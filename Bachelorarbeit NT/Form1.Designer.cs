@@ -19,7 +19,7 @@ namespace Bachelorarbeit_NT
             while(!saved)
             {
                 Thread.Sleep(1000);
-                Console.WriteLine("Kein Sicheres Beenden");
+                
             }
             if (disposing && (components != null))
             {

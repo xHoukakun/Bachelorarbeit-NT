@@ -16,8 +16,6 @@ namespace Bachelorarbeit_NT
         string connectDB = Application.StartupPath;
 
         static int cpus = 12;
-        static ulong x = 1;
-        static ulong y = 1;
         static double n1 = 10 * 10e17;
         static ulong n = Convert.ToUInt64(n1);
         CancellationTokenSource ctsrc = new CancellationTokenSource();

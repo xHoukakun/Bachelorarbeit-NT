@@ -21,21 +21,15 @@ namespace Bachelorarbeit_NT
         private List<Thread> dbcreater = new List<Thread>();
 
         
-        public bool producer_finished = false;
-        public bool worker_finished = false;
-        public bool binder_finished = false;
-        public bool DBConnect_finished = false;
+       
+
+
+        
         public int workerNum = 0;
         public int workerFinished = 0;
-        public int Binder = 0;
-        public bool sicheres_beenden = false;
-        public bool producer = false;
-
+        public int Binder = 0;    
         ulong AnzahlJobs = 0;
-
-
-
-        public ulong AnzahlWerte = 0;
+        ulong AnzahlWerte = 0;
 
 
 
@@ -45,15 +39,18 @@ namespace Bachelorarbeit_NT
         private decimal MaxEuler;
         private ulong AnzahlZeta3;
         private decimal MaxZeta3;
+        public bool bZeta3=false;
+        public bool bEuler = false;
+        public bool bwurzel2 = false;
 
         public Starter(int workerNum, ulong N, CancellationToken cToken)
         {
 
             AnzahlWerte = N;
             this.workerNum = workerNum;
-            Channel<Coordinate> jobChannel = Channel.CreateBounded<Coordinate>(65536);  //erstelle den Job Queue 8388608
-            Channel<Result> resultChannel = Channel.CreateBounded<Result>(33554432);   //erstelle die result queue 33554432
-            Channel<Listb> dbChannelW2 = Channel.CreateBounded<Listb>(8); //erstelle einen DB channel
+            Channel<Coordinate> jobChannel = Channel.CreateBounded<Coordinate>(64);  //erstelle den Job Queue 8388608
+            Channel<Result> resultChannel = Channel.CreateBounded<Result>(33554432);   //erstelle die result queue 
+            Channel<Listb> dbChannelW2 = Channel.CreateBounded<Listb>(8); //erstelle einen DB channel              
             Channel<Listb> dbChannelEuler = Channel.CreateBounded<Listb>(8);
             Channel<Listb> dbChannelZeta3 = Channel.CreateBounded<Listb>(8);
 
@@ -648,14 +645,17 @@ namespace Bachelorarbeit_NT
         public async void BulkInsertWurzel2(ChannelReader<Listb> dbChannel,string Connect,CancellationToken cToken)
         {
             BulkInsert(dbChannel, Connect, cToken); //Rufe Buld Insert mit dem jeweiligen Channel auf( Code redundanz)
+            bwurzel2 = true;        
         }
         public async void BulkInsertZeta3(ChannelReader<Listb> dbChannel, string Connect, CancellationToken cToken)
         {
             BulkInsert(dbChannel, Connect, cToken); //Rufe Buld Insert mit dem jeweiligen Channel auf( Code redundanz)
+            bZeta3 = true;
         }
         public async void BulkInsertEuler(ChannelReader<Listb> dbChannel, string Connect, CancellationToken cToken)
         {
             BulkInsert(dbChannel, Connect, cToken); //Rufe Buld Insert mit dem jeweiligen Channel auf( Code redundanz)
+            bEuler = true;       
         }
         /// <summary>
         /// Der Controller wird darauf verwendet das falls ein Cancel Requested wird alles noch gesaved wird.
@@ -678,7 +678,7 @@ namespace Bachelorarbeit_NT
                 while (true)
                 {
                     
-                    if (jobChannel.Completion.IsCompleted && ResultChannel.Completion.IsCompleted && DBA.Completion.IsCompleted && DBB.Completion.IsCompleted && DBC.Completion.IsCompleted) 
+                    if ((jobChannel.Completion.IsCompleted && ResultChannel.Completion.IsCompleted && DBA.Completion.IsCompleted && DBB.Completion.IsCompleted && DBC.Completion.IsCompleted) || (bwurzel2&&bEuler&&bZeta3)) 
                     {
 
 
