@@ -190,7 +190,7 @@ namespace Bachelorarbeit_NT
                         }
 
                 }
-
+               
 
                 
              
@@ -414,6 +414,14 @@ namespace Bachelorarbeit_NT
             using (var connection = new SQLiteConnection(connect))
             {
                 connection.Open();
+               
+               
+                
+                
+                
+
+
+                
                 var cmd = new SQLiteCommand(connection);
                 Console.WriteLine("drop table");
                 cmd.CommandText = "DROP TABLE IF EXISTS Wurzel2";
@@ -429,7 +437,7 @@ namespace Bachelorarbeit_NT
 
                  
 
-                    Value REAL NOT NULL UNIQUE,
+                    Value  Decimal NOT NULL UNIQUE,
                     PRIMARY KEY(Value)
                     )WITHOUT ROWID;";
                 cmd.ExecuteNonQuery();
@@ -437,7 +445,7 @@ namespace Bachelorarbeit_NT
 
                     
 
-                    Value REAL NOT NULL UNIQUE,
+                    Value Decimal NOT NULL UNIQUE,
                     PRIMARY KEY(Value)
                 )WITHOUT ROWID;";
                 cmd.ExecuteNonQuery();
@@ -445,7 +453,7 @@ namespace Bachelorarbeit_NT
 
                     
 
-                    Value REAL NOT NULL UNIQUE,
+                    Value Decimal NOT NULL UNIQUE,
                     PRIMARY KEY(Value)
                 )WITHOUT ROWID;";
                 cmd.ExecuteNonQuery();
@@ -596,11 +604,10 @@ namespace Bachelorarbeit_NT
                     {
 
 
-                           
 
-                           
-                                
-                                StreamWriter sw2 = new StreamWriter("Anzahl.txt");  //wenn alles Geschlossen ist werden einzelne Werte gespeichert.
+                        Thread.Sleep(10000);
+                   
+                        StreamWriter sw2 = new StreamWriter("Anzahl.txt");  //wenn alles Geschlossen ist werden einzelne Werte gespeichert.
                                 sw2.WriteLine(AnzahlWurzel2);
                                 sw2.WriteLine(MaxWurzel2);
                                 sw2.WriteLine(AnzahlEuler);
