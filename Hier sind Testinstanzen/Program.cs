@@ -18,11 +18,29 @@ namespace Hier_sind_Testinstanzen
 
 
 
-            Channel<ulong> jobChannel = Channel.CreateUnbounded<ulong>();
-            var cr = new Thread(() => Schreiber(jobChannel));
-            var cd = new Thread(() => Producer(jobChannel));
-            cr.Start();
-            cd.Start();
+            List<int> Test = new List<int>();
+            Test.Add(1);
+            Test.Add(2);
+            foreach (int element in Test)
+            {
+                Console.WriteLine(element);
+            }
+            Console.WriteLine("Hallo");
+            Test.RemoveAt(0);
+            Console.WriteLine(Test[0]);
+
+           
+            Test.Add(1);
+            Console.WriteLine("ollah");
+            foreach(int element in Test)
+            {
+                Console.WriteLine(element);
+            }
+            
+            Console.ReadKey();
+
+           
+           
             /*
 
             StringBuilder connectDB1 = new StringBuilder(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location));
@@ -94,29 +112,7 @@ namespace Hier_sind_Testinstanzen
             }*/
         }
 
-        public static async void Producer(ChannelWriter<ulong> jobProducer)
-        {
-            for (int i = 0; i < 1000; i++)
-            {
-                await jobProducer.WriteAsync(Convert.ToUInt64(i));
-            }
-            jobProducer.Complete();
-            Console.WriteLine("Prod fertig");
-            return;
-        }
-        public static async void Schreiber(ChannelReader<ulong> resultChan)
-        {
-            while (await resultChan.WaitToReadAsync())
-            {
-                while (resultChan.TryRead(out var jobItem))
-                {
-                    Console.WriteLine(jobItem);
-                    Thread.Sleep(10);
-                }
-            }
-            Console.WriteLine("Return");
-            return;
-        }
+      
     }
 }
 

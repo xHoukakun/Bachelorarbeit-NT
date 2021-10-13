@@ -32,7 +32,8 @@ namespace Bachelorarbeit_NT
         ulong AnzahlJobs = 0;
         ulong AnzahlWerte = 0;
         ulong AnzahlDB = 0;
-        private int Counter = 200_000;
+        public int AnzahlIntervalle = 0;
+        
 
         private ulong AnzahlWurzel2;
         private decimal MaxWurzel2;
@@ -40,38 +41,55 @@ namespace Bachelorarbeit_NT
         private decimal MaxEuler;
         private ulong AnzahlZeta3;
         private decimal MaxZeta3;
-    
-        public Starter(int workerNum, ulong N, CancellationToken cToken)
+        private decimal Delta;
+        private decimal GesamtIntervall=10M;
+        public Starter(int workerNum, ulong N,int AnzahlIntervalle, CancellationToken cToken)
         {
 
             AnzahlWerte = N;
+            this.AnzahlIntervalle = AnzahlIntervalle;
             this.workerNum = workerNum;
+            Delta = GesamtIntervall / Convert.ToDecimal(AnzahlIntervalle);
             Channel<Coordinate> jobChannel = Channel.CreateBounded<Coordinate>(65536);  //erstelle den Job Queue 8388608
             Channel<Result> resultChannel = Channel.CreateBounded<Result>(33554432);   //erstelle die result queue 
-            Channel<Listb> dbChannelW2 = Channel.CreateBounded<Listb>(8); //erstelle einen DB channel              
-            Channel<Listb> dbChannelEuler = Channel.CreateBounded<Listb>(8);
-            Channel<Listb> dbChannelZeta3 = Channel.CreateBounded<Listb>(8);
+            Channel<Decimal> cWurzel2 = Channel.CreateBounded<Decimal>(65536); //Erstelle einen Channel für wo nur werte einer Quadratischen Form liegen      
+            Channel<Decimal> cEuler = Channel.CreateBounded<Decimal>(65536);  
+            Channel<Decimal> cZeta3 = Channel.CreateBounded<Decimal>(65536);
+            Channel<Decimal> AbstandWurzel2 = Channel.CreateBounded<Decimal>(512);
+            Channel<Decimal> AbstandEuler = Channel.CreateBounded<Decimal>(512);
+            Channel<Decimal> AbstandZeta3 = Channel.CreateBounded<Decimal>(512);
 
-            
+            var sWurzel2 = new Thread(() => Statistic(AbstandWurzel2, "RootOfTwo"));
+            sWurzel2.Start();
+            worker.Add(sWurzel2);
+            var sEuler = new Thread(() => Statistic(AbstandEuler, "Euler"));
+            sEuler.Start();
+            worker.Add(sEuler);
+            var sZeta3 = new Thread(() => Statistic(AbstandZeta3, "Zeta3"));
+            sZeta3.Start();
+            worker.Add(sZeta3);
 
-            Database_Management(dbChannelW2, dbChannelEuler, dbChannelZeta3, cToken); //hier wird die Datenbank erstellt. Ich habe das in eine Methode ausgelagert für die Lesbarkeit
+            //Database_Management(dbChannelW2, dbChannelEuler, dbChannelZeta3, cToken); //hier wird die Datenbank erstellt. Ich habe das in eine Methode ausgelagert für die Lesbarkeit
+            var holdListWurzel2 = new Thread(() => HoldList(cWurzel2, AbstandWurzel2)); //den Listen Halter erstellen 
+            holdListWurzel2.Start();
+            worker.Add(holdListWurzel2);
+            var holdListZeta3 = new Thread(() => HoldList(cZeta3, AbstandZeta3));
+            holdListZeta3.Start();
+            worker.Add(holdListZeta3);
+            var holdListEuler = new Thread(() => HoldList(cEuler, AbstandEuler));
+            holdListEuler.Start();
+            worker.Add(holdListEuler);
 
-            {
-                var Binder1 = new Thread(() => binder(resultChannel, dbChannelEuler, dbChannelW2, dbChannelZeta3, cToken));// lambda ausdruck um den thread zu initialisieren.
-                Binder1.Start();
-                worker.Add(Binder1);
-                var Binder2 = new Thread(() => binder(resultChannel, dbChannelEuler, dbChannelW2, dbChannelZeta3, cToken));// lambda ausdruck um den thread zu initialisieren.
-                Binder2.Start();
-                worker.Add(Binder2);
-                var Binder3 = new Thread(() => binder(resultChannel, dbChannelEuler, dbChannelW2, dbChannelZeta3, cToken));
-                Binder3.Start();
-                worker.Add(Binder3);
-                var Binder4 = new Thread(() => binder(resultChannel, dbChannelEuler, dbChannelW2, dbChannelZeta3, cToken));
-                Binder4.Start();
-                worker.Add(Binder4); 
-            } //Hier werden 4 Binder erstellt 
+                var sorter1 = new Thread(() => sorter(resultChannel, cEuler, cWurzel2, cZeta3, cToken));// lambda ausdruck um den thread zu initialisieren.
+                sorter1.Start();
+                worker.Add(sorter1);
+                var sorter2 = new Thread(() => sorter(resultChannel, cEuler, cWurzel2, cZeta3, cToken));// lambda ausdruck um den thread zu initialisieren.
+                sorter2.Start();
+                worker.Add(sorter2);
+               
+             //Hier werden 2 sorter erstellt 
               //Erstelle Worker
-            var controller = new Thread(() => Controller(jobChannel, resultChannel, dbChannelEuler, dbChannelW2, dbChannelZeta3, cToken));
+            var controller = new Thread(() => Controller(jobChannel, resultChannel, cEuler, cWurzel2, cZeta3, cToken));
             controller.Start();
             worker.Add(controller);
             for (int i = 0; i < workerNum; i++)
@@ -80,14 +98,14 @@ namespace Bachelorarbeit_NT
                 trh.Start();                                                                    //beispiel für einen "verständlicheren" Lambda findet man unten
                 worker.Add(trh);                                                                //ich kenne den Worker ja sogesehen nicht. Der bekommt erst später einen genauen Typen.
             }
-            dbcreater.ForEach(delegate (Thread thread) //Warte auf die erstellung der Datenbanken
+           /* dbcreater.ForEach(delegate (Thread thread) //Warte auf die erstellung der Datenbanken
             {
 
                 thread.Join();
 
 
             });
-
+           */
             var JobProd = new Thread(() => JobProducer(jobChannel, cToken, N)); //hier startet der Job Producer
             JobProd.Start();
             worker.Add(JobProd);
@@ -105,7 +123,7 @@ namespace Bachelorarbeit_NT
 
                     decimal result = jobItem.Calc();   //Berechne es.
                      
-                        switch (s)
+                        switch (s)  //unsicher ob ich das wirklich hier machen soll
                         {
                             case "RootOfTwo":
 
@@ -213,7 +231,7 @@ namespace Bachelorarbeit_NT
         {
             decimal x = 1, y = 1;
             decimal x2 = x;
-            if (File.Exists("Merken.txt"))
+           /* if (File.Exists("Merken.txt"))
             {
 
                 string hile = "Merken.txt";
@@ -237,7 +255,7 @@ namespace Bachelorarbeit_NT
 
                 }
                 x++;
-            }
+            }*/
             while (AnzahlJobs < Math.Ceiling(ende * 1.5))  //gehe diagonal über das Feld um schneller Ergebnisse zu bekommen
             {
                 x2 = x;
@@ -301,25 +319,7 @@ namespace Bachelorarbeit_NT
                 this.result = r;
             }
         }
-        public class Listb
-        {
-            public List<Decimal> r = new List<Decimal>();
-            public string type;
-            public Listb(List<Decimal> _r, string t) //eine Liste wird mit Call by referenz übergeben das müssen wir ändern da wir ansonsten ein problem bekommen
-            {
-                for (int i = 0; i < _r.Count; i++)
-                {
-                    r.Add(_r[i]);
-                }
-
-                type = t;
-
-            }
-            public List<decimal> getList()
-            {
-                return r;
-            }
-        }  //Datentyp für den Datenbank Channel
+         //Datentyp für den Datenbank Channel
         /// <summary>
         /// Hier ist ein Binder, dieser nimmt sachen aus dem Channel  packt es in Päckchen und sortiert es in jeweilige Channels
         /// </summary>
@@ -328,15 +328,13 @@ namespace Bachelorarbeit_NT
         /// <param name="DBWurzel2">Datenbank Channel Wurzel2</param>
         /// <param name="DBZeta3">Datenbank channel Zeta3 </param>
         /// <param name="cToken"></param>
-        public async void binder(ChannelReader<Result> resultChan, ChannelWriter<Listb> DBEuler, ChannelWriter<Listb> DBWurzel2, ChannelWriter<Listb> DBZeta3, CancellationToken cToken) //Das ist der DB worker der schreibt alles  in die Datenbank
+        public async void sorter(ChannelReader<Result> resultChan, ChannelWriter<Decimal> DBEuler, ChannelWriter<Decimal> DBWurzel2, ChannelWriter<Decimal> DBZeta3, CancellationToken cToken) //Das ist der DB worker der schreibt alles  in die Datenbank
         {
 
 
 
 
-            List<Decimal> RootOfTwo = new List<Decimal>();
-            List<Decimal> Zeta3 = new List<Decimal>();
-            List<Decimal> Euler = new List<Decimal>();
+            
             while (await resultChan.WaitToReadAsync())    //diese beiden While Schleifen sorgen insbesondere dafür, dass es async ist.  Und man kein Deadlock szenario bekomm ( Auch bekannt als Philosophen Problem)
             {
 
@@ -349,52 +347,31 @@ namespace Bachelorarbeit_NT
                         switch (s)
                         {
                             case "RootOfTwo":
-                                RootOfTwo.Add(u);
-                                if (RootOfTwo.Count == Counter) //Päckchen von 200_000 Einheiten. Für Bulk Insert
-                                {
-                                    await DBWurzel2.WriteAsync(new Listb(RootOfTwo, "RootOfTwo"));
-                                    RootOfTwo.Clear();
-
-                                }
+                              
+                                await DBWurzel2.WriteAsync(u);
                                 break;
+
+                               
                             case "Zeta3":
-                                Zeta3.Add(u);
-                                if (Zeta3.Count == Counter)
-                                {
-                                    await DBZeta3.WriteAsync(new Listb(Zeta3, "Zeta3"));
-                                    Zeta3.Clear();
-                                }
+                               
+                                
+                                    await DBZeta3.WriteAsync(u);
+                                    
+                                
                                 break;
                             case "Euler":
-                                Euler.Add(u);
-                                if (Euler.Count == Counter)
-                                {
-                                    await DBEuler.WriteAsync(new Listb(Euler, "Euler"));
-                                    Euler.Clear();
-                                }
+                               
+                                    await DBEuler.WriteAsync(u);
+                                   
                                 break;
                             default: throw new ArgumentException(); //Falls es ein s gibt welches zu nichts passt
                         }
                     }
             }      
-            if (RootOfTwo.Count != 0)  //in der Liste könnten Reste sein. Diese sollen natürlich in die DB geschrieben werden.
-            {
-                await DBWurzel2.WriteAsync(new Listb(RootOfTwo, "RootOfTwo"));
-                RootOfTwo.Clear();
-            }
-            if (Euler.Count != 0)
-            {
-                await DBEuler.WriteAsync(new Listb(Euler, "Euler"));
-                Euler.Clear();
-            }
-            if (Zeta3.Count != 0)
-            {
-                await DBZeta3.WriteAsync(new Listb(Zeta3, "Zeta3"));
-                Zeta3.Clear();
-            }
+     
             Binder++;
             Thread.Sleep(2000);
-            if (Binder == 4)  //Wenn alle Fertig sind schließt der Letzte die Channels.
+            if (Binder == 2)  //Wenn alle Fertig sind schließt der Letzte die Channels.
             {
                
 
@@ -405,6 +382,58 @@ namespace Bachelorarbeit_NT
             }
             return;
         }
+        /// <summary>
+        /// hier werden listen gehalten
+        /// </summary>
+        /// <param name="chReader"></param>
+        /// <param name="chWriter"></param>
+        public async void HoldList(ChannelReader<Decimal> chReader, ChannelWriter<Decimal> chWriter)
+        {
+            List<Decimal> Ergebnisse = new List<Decimal>();
+            while (await chReader.WaitToReadAsync())    //diese beiden While Schleifen sorgen insbesondere dafür, dass es async ist.  Und man kein Deadlock szenario bekomm ( Auch bekannt als Philosophen Problem)
+            {
+
+
+                while (chReader.TryRead(out var jobItem))
+                {
+                    Ergebnisse.Add(jobItem);
+                    if(Ergebnisse.Count==20_000_000)
+                    {
+                        Abstandsrechner(Ergebnisse, chWriter);
+                    }
+
+                }
+            }
+            while(Ergebnisse.Count!=1)
+            {
+                Abstandsrechner(Ergebnisse, chWriter);
+            }
+            chWriter.TryComplete();
+        }
+        public async void Statistic(ChannelReader<Decimal> chReader, string Typ)
+        {
+            List<ulong> Anzahl = new List<ulong>();
+            for(int i =0;i<AnzahlIntervalle;i++)
+            {
+                Anzahl.Add(0);
+            }
+            Anzahl.Add(0);
+            while (await chReader.WaitToReadAsync())    //diese beiden While Schleifen sorgen insbesondere dafür, dass es async ist.  Und man kein Deadlock szenario bekomm ( Auch bekannt als Philosophen Problem)
+            {
+
+
+                while (chReader.TryRead(out var jobItem))
+                {
+                    decimal u = jobItem;
+                    mIntervallRechner(u, Anzahl);
+                }
+            }
+           
+
+            //Hier muss dann die Statistik übergeben werden. ( Ich werde versuchen dies als PythonSkript zu machen;
+        }
+
+           
         /// <summary>
         /// Hier werden die Tables erst gedroppt und dann neu erstellt. Somit fängt die Berechnung von neu an. Man hat keine Inkonsistenten Daten
         /// </summary>
@@ -478,104 +507,7 @@ namespace Bachelorarbeit_NT
 
             }
         }
-        /// <summary>
-        /// Bulk Insert für Performance
-        /// </summary>
-        /// <param name="dbChannel"></param>
-        /// <param name="Connect"></param>
-        /// <param name="cToken"></param>
-        public async void BulkInsert(ChannelReader<Listb> dbChannel, string Connect, CancellationToken cToken) // https://docs.microsoft.com/en-us/dotnet/standard/data/sqlite/bulk-insert 
-        {
-            
-            while( await dbChannel.WaitToReadAsync())   //diese beiden While Schleifen sorgen insbesondere dafür, dass es async ist.  Und man kein Deadlock szenario bekomm ( Auch bekannt als Philosophen Problem)
-            { //versuche es rauszulesen
-                while (dbChannel.TryRead(out var jobItem))
-                {
-                    
-
-                    var connection = new SQLiteConnection(Connect); //SQLite wrapper
-                    connection.Open();  //hier wird die Connection zur Datenbank geöffnet
-
-
-                    using (var transaction = connection.BeginTransaction())  //eine Transaktion wird begonnen 
-                    {
-                        string Tabelname = jobItem.type; 
-                        List<decimal> Value = jobItem.getList();  //call by refrence 
-
-                        var command = connection.CreateCommand();
-                        switch (Tabelname)
-                        {
-                            case "RootOfTwo":
-                                command.CommandText = @"INSERT or REPLACE INTO Wurzel2(Value) VALUES(@Value) "; //falls diese Zahl schon existiert wird sie erstetzt. Die Zahl kann nur einmal vor kommen.
-                                command.Prepare();
-                                break;
-                            case "Euler":
-                                command.CommandText = @"INSERT or REPLACE INTO Eulersche_Zahl(Value) VALUES(@Value) ";
-                                command.Prepare();
-                                break;
-                            case "Zeta3":
-                                command.CommandText = @"INSERT or REPLACE INTO Zeta3(Value) VALUES(@Value) ";
-                                command.Prepare();
-                                break;
-                            default: throw new ArgumentException();
-                        }
-                        var parameter = command.CreateParameter();
-                        parameter.ParameterName = "@Value";
-                        command.Parameters.Add(parameter);
-
-                        for (int i = 0; i < Value.Count(); i++)
-                        {
-
-
-                            command.Parameters.AddWithValue("@Value", Value[i]);
-                            command.Prepare();
-                            command.ExecuteNonQuery();  //Bulk insert
-                                
-                            
-
-
-                        }
-
-                        transaction.Commit(); //Transaktion wird durchgeführt
-                        connection.Close(); //die Connection wird geschlossen
-                        var gc = new Thread(() => GC.Collect());
-                        gc.Start();   //hier lasse ich den Garbage Collector laufen. das reduziert die Speicherauslastung. 
-
-
-                    }
-
-
-
-                }
-            
-               
-                    
-               
-                
-            
-        
-    
-
-
-            }
-            AnzahlDB++;
-
-        }
-        public async void BulkInsertWurzel2(ChannelReader<Listb> dbChannel,string Connect,CancellationToken cToken)
-        {
-            BulkInsert(dbChannel, Connect, cToken); //Rufe Buld Insert mit dem jeweiligen Channel auf( Code redundanz)
-                   
-        }
-        public async void BulkInsertZeta3(ChannelReader<Listb> dbChannel, string Connect, CancellationToken cToken)
-        {
-            BulkInsert(dbChannel, Connect, cToken); //Rufe Buld Insert mit dem jeweiligen Channel auf( Code redundanz)
-            
-        }
-        public async void BulkInsertEuler(ChannelReader<Listb> dbChannel, string Connect, CancellationToken cToken)
-        {
-            BulkInsert(dbChannel, Connect, cToken); //Rufe Buld Insert mit dem jeweiligen Channel auf( Code redundanz)
-              
-        }
+       
         /// <summary>
         /// Der Controller wird darauf verwendet das falls ein Cancel Requested wird alles noch gesaved wird.
         /// </summary>
@@ -585,17 +517,17 @@ namespace Bachelorarbeit_NT
         /// <param name="DBB"></param>
         /// <param name="DBC"></param>
         /// <param name="cToken"></param>
-        public async void Controller(ChannelReader<Coordinate> jobChannel, ChannelReader<Result> ResultChannel, ChannelReader<Listb> DBA, ChannelReader<Listb> DBB, ChannelReader<Listb> DBC,CancellationToken cToken)
+        public async void Controller(ChannelReader<Coordinate> jobChannel, ChannelReader<Result> ResultChannel, ChannelReader<Decimal> DBA, ChannelReader<Decimal> DBB, ChannelReader<Decimal> DBC,CancellationToken cToken)
         {
             
             while(cToken.IsCancellationRequested==false) //wenn der Token false ist dann wird nichts gemacht.
             {
                 Thread.Sleep(1000);
-                Console.WriteLine(AnzahlDB);
+                
             }
             if (cToken.IsCancellationRequested == true) //wenn der Token auf True fällt dann wird ein sicherer abbruch initialisiert.
             {
-                Counter = 1_000_000;
+                
                 while (true)
                 {
 
@@ -632,98 +564,51 @@ namespace Bachelorarbeit_NT
             }
 
         }
-        public void Database_Management(ChannelReader<Listb> dbChannelW2, ChannelReader<Listb> dbChannelEuler, ChannelReader<Listb> dbChannelZeta3, CancellationToken cToken)
+        
+        public void Abstandsrechner(List<Decimal> Werte, ChannelWriter<Decimal> Abstand)
         {
-            if (File.Exists("Anzahl.txt"))
+            Werte.Sort();
+            decimal x = 0;
+            if (Werte.Count()>100)
             {
-                string file = "Anzahl.txt";
-
-                StreamReader reader = new StreamReader(file);
-                AnzahlWurzel2 = Convert.ToUInt64(reader.ReadLine()); //Ein Controller der alles überwacht aber kein Item rausnimmt. 
-                MaxWurzel2 = Convert.ToDecimal(reader.ReadLine());
-                AnzahlEuler = Convert.ToUInt64(reader.ReadLine());
-                MaxEuler = Convert.ToDecimal(reader.ReadLine());
-                AnzahlZeta3 = Convert.ToUInt64(reader.ReadLine());
-                MaxZeta3 = Convert.ToDecimal(reader.ReadLine());
-                reader.Close();
+                for (int i = 0; i < 100; i++)
+                {
+                    x = Werte[i + 1] - Werte[i];
+                    Werte.RemoveAt(i);
+                    Abstand.WriteAsync(x);
+                }
             }
             else
             {
-                StringBuilder connectZeta3 = new StringBuilder(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)); //man erfährt wo die DB liegt. Insbesondere sorgen die Nächsten Zeilen code für die DB
-                connectZeta3.Remove(connectZeta3.Length - 5, 5);
-                connectZeta3.Append("Zeta3.db");
-                StringBuilder zeta3 = new StringBuilder(@"URI=file:");
-                zeta3.Append(connectZeta3);
-                string DBZeta3 = Convert.ToString(zeta3);
-
-                var crDB = new Thread(() => Create_Database(DBZeta3));
-                crDB.Start();
-                dbcreater.Add(crDB);
-
-                StringBuilder connectEuler = new StringBuilder(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)); //man erfährt wo die DB liegt. Insbesondere sorgen die Nächsten Zeilen code für die DB
-                connectEuler.Remove(connectEuler.Length - 5, 5);
-                connectEuler.Append("Euler.db");
-                StringBuilder Euler2 = new StringBuilder(@"URI=file:");
-                Euler2.Append(connectEuler);
-                string DBEuler = Convert.ToString(Euler2);
-
-                var crDB1 = new Thread(() => Create_Database(DBEuler));
-                crDB1.Start();
-                dbcreater.Add(crDB1);
-
-                StringBuilder connectWurzel2 = new StringBuilder(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)); //man erfährt wo die DB liegt. Insbesondere sorgen die Nächsten Zeilen code für die DB
-                connectWurzel2.Remove(connectWurzel2.Length - 5, 5);
-                connectWurzel2.Append("Wurzel2.db");
-                StringBuilder W2 = new StringBuilder(@"URI=file:");
-                W2.Append(connectWurzel2);
-                string DBW2 = Convert.ToString(W2);
-
-                var crDB2 = new Thread(() => Create_Database(DBW2));
-                crDB2.Start();
-                dbcreater.Add(crDB2);
+                for(int i=0;i-1<Werte.Count(); i++)  //bug
+                {
+                    x = Werte[i + 1] - Werte[i];
+                    Werte.RemoveAt(i);
+                    Abstand.WriteAsync(x);
+                }
             }
-        
-            {
-                StringBuilder connectWurzel2 = new StringBuilder(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)); //man erfährt wo die DB liegt. Insbesondere sorgen die Nächsten Zeilen code für die DB
-                connectWurzel2.Remove(connectWurzel2.Length - 5, 5);
-                connectWurzel2.Append("Wurzel2.db");
-                StringBuilder W2 = new StringBuilder(@"URI=file:");
-                W2.Append(connectWurzel2);
-                string DBW2 = Convert.ToString(W2);
-
-                var Wurzel2t = new Thread(() => BulkInsertWurzel2(dbChannelW2, DBW2, cToken));
-                Wurzel2t.Start();
-                worker.Add(Wurzel2t);
-
-            }
-            {
-                StringBuilder connectEuler = new StringBuilder(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)); //man erfährt wo die DB liegt. Insbesondere sorgen die Nächsten Zeilen code für die DB
-                connectEuler.Remove(connectEuler.Length - 5, 5);
-                connectEuler.Append("Euler.db");
-                StringBuilder Euler2 = new StringBuilder(@"URI=file:");
-                Euler2.Append(connectEuler);
-                string DBEuler = Convert.ToString(Euler2);
-
-
-                var DBEulert = new Thread(() => BulkInsertEuler(dbChannelEuler, DBEuler, cToken));
-                DBEulert.Start();
-                worker.Add(DBEulert);
-
-            }
-            {
-                StringBuilder connectZeta3 = new StringBuilder(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)); //man erfährt wo die DB liegt. Insbesondere sorgen die Nächsten Zeilen code für die DB
-                connectZeta3.Remove(connectZeta3.Length - 5, 5);
-                connectZeta3.Append("Zeta3.db");
-                StringBuilder zeta3 = new StringBuilder(@"URI=file:");
-                zeta3.Append(connectZeta3);
-                string DBZeta3 = Convert.ToString(zeta3);
-
-                var DBZeta3t = new Thread(() => BulkInsertZeta3(dbChannelZeta3, DBZeta3, cToken));
-                DBZeta3t.Start();
-                worker.Add(DBZeta3t);
-            }
-
         }
+        public void mIntervallRechner(decimal Abstand, List<ulong> Zähler) //implementation der Methode IntervallRechner;
+        {
+            int i = 0;
+            while (i < AnzahlIntervalle) 
+            {
+                if (Convert.ToDecimal(i) * Delta <= Abstand && Abstand <= Convert.ToDecimal(i + 1) * Delta) 
+                {
+
+                    //hier muss dann hochgezählt werden
+                    Zähler[i]++;
+                    return;
+                }
+                else
+                {
+                    i++;
+                }
+            }
+            Zähler[i]++;
+                 
+
+        } 
     }
 }
 

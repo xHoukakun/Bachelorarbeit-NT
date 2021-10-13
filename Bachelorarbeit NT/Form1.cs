@@ -17,7 +17,7 @@ namespace Bachelorarbeit_NT
     {
         string connectDB = Application.StartupPath;
 
-        static int cpus = 12;
+        static int cpus = 4;
         static double n1 = 10 * 10e17;
         static ulong n = Convert.ToUInt64(n1);
         CancellationTokenSource ctsrc = new CancellationTokenSource();
@@ -26,39 +26,8 @@ namespace Bachelorarbeit_NT
         public Form1()
         {
             InitializeComponent();
-            // var Start = new Starter(cpus, n, ctsrc.Token);
-            StringBuilder connectEuler = new StringBuilder(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)); //man erfährt wo die DB liegt. Insbesondere sorgen die Nächsten Zeilen code für die DB
-            connectEuler.Remove(connectEuler.Length - 5, 5);
-            connectEuler.Append("Euler.db");
-            StringBuilder Euler2 = new StringBuilder(@"URI=file:");
-            Euler2.Append(connectEuler);
-            string DBEuler = Convert.ToString(Euler2);
-            var connection = new SQLiteConnection(DBEuler);
-            connection.Open();
-            connection.LoadExtension("mod_spatialite");
-
-            var command = connection.CreateCommand();
-            command.CommandText =
-            @"
-    SELECT spatialite_version()
-";
-            var version = (string)command.ExecuteScalar();
-
-            Console.WriteLine($"Using SpatiaLite {version}");
-
-
-            command.CommandText =
-            @"
-                            SELECT Max(Value)
-                            FROM Eulersche_Zahl
-                           
-                            ";
-
-            var fromdb = command.ExecuteScalar();
-           
-            connection.Close();
-
-
+            var Start = new Starter(cpus, 20, 1_000,ctsrc.Token);
+    
 
         }
 
@@ -80,6 +49,11 @@ namespace Bachelorarbeit_NT
         private void Cancel()
         {
             
+        }
+
+        private void chart1_Click(object sender, EventArgs e)
+        {
+
         }
     }
 }
