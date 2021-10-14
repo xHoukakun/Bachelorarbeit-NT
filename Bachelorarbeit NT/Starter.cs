@@ -135,7 +135,7 @@ namespace Bachelorarbeit_NT
                                     }
                                     else if (result < MaxWurzel2)
                                     {
-                                        
+                                        MaxWurzel2 = result;
                                         await resultChan.WriteAsync(new Result(s, result));  //Warte bis du auf  Result schreiben kannst
                                     }
 
@@ -161,7 +161,7 @@ namespace Bachelorarbeit_NT
                                     }
                                     else if (result < MaxEuler)
                                     {
-                                        
+                                        MaxEuler = result;
                                         await resultChan.WriteAsync(new Result(s, result)); //Warte bis du auf Result schreiben kannst
                                     }
 
@@ -187,7 +187,7 @@ namespace Bachelorarbeit_NT
                                     }
                                     else if (result < MaxZeta3)
                                     {
-                                        
+                                        MaxZeta3 = result;
                                         await resultChan.WriteAsync(new Result(s, result)); //Warte bis du auf Result schreiben kannst
                                     }
 
@@ -390,36 +390,13 @@ namespace Bachelorarbeit_NT
         public async void HoldList(ChannelReader<Decimal> chReader, ChannelWriter<Decimal> chWriter)
         {
             List<Decimal> Ergebnisse = new List<Decimal>();
-            ulong AnzahlListe = 0;
-            decimal Maximum = 0;
             while (await chReader.WaitToReadAsync())    //diese beiden While Schleifen sorgen insbesondere dafür, dass es async ist.  Und man kein Deadlock szenario bekomm ( Auch bekannt als Philosophen Problem)
             {
 
 
                 while (chReader.TryRead(out var jobItem))
                 {
-                    decimal u = jobItem;
-                    
-                    if (AnzahlListe == AnzahlWerte)
-                    {
-                        if(u>Maximum)
-                        {
-
-                        }
-                        else if(u<Maximum)
-                        {
-                            
-                            Ergebnisse.Remove(Maximum);
-                            Ergebnisse.Add(u);
-                            Maximum = Ergebnisse.Max();
-                        }
-                    }
-                    else
-                    {
-                        Maximum=Math.Max(u,Maximum);
-                        AnzahlListe++;
-                        Ergebnisse.Add(u);
-                    }
+                    Ergebnisse.Add(jobItem);
                     if(Ergebnisse.Count==20_000_000)
                     {
                         Abstandsrechner(Ergebnisse, chWriter);
@@ -441,7 +418,6 @@ namespace Bachelorarbeit_NT
                 Anzahl.Add(0);
             }
             Anzahl.Add(0);
-            ulong AWerte = 0;
             while (await chReader.WaitToReadAsync())    //diese beiden While Schleifen sorgen insbesondere dafür, dass es async ist.  Und man kein Deadlock szenario bekomm ( Auch bekannt als Philosophen Problem)
             {
 
@@ -450,59 +426,9 @@ namespace Bachelorarbeit_NT
                 {
                     decimal u = jobItem;
                     mIntervallRechner(u, Anzahl);
-                    AWerte++;
-                    if (AWerte == 1000) //update Funktion für die Statistic
-                    {
-                        AWerte = 0;
-                        switch (Typ)
-                        {
-                            case "RootOfTwo":
-                                Form1.Liste_RootOfTwo(Anzahl);
-
-                                break;
-
-
-                            case "Zeta3":
-
-                                Form1.Liste_Zeta3(Anzahl);
-
-
-
-                                break;
-                            case "Euler":
-                                Form1.Liste_Euler(Anzahl);
-
-
-
-                                break;
-                            default: throw new ArgumentException(); //Falls es ein s gibt welches zu nichts passt
-                        }
-                    }
                 }
             }
-            switch (Typ)
-            {
-                case "RootOfTwo":
-                    Form1.Liste_RootOfTwo(Anzahl);
-                    
-                    break;
-
-
-                case "Zeta3":
-
-                    Form1.Liste_Zeta3(Anzahl);
-                   
-
-
-                    break;
-                case "Euler":
-                    Form1.Liste_Euler(Anzahl);
-
-                    
-
-                    break;
-                default: throw new ArgumentException(); //Falls es ein s gibt welches zu nichts passt
-            }
+           
 
             //Hier muss dann die Statistik übergeben werden. ( Ich werde versuchen dies als PythonSkript zu machen;
         }
@@ -654,7 +580,7 @@ namespace Bachelorarbeit_NT
             }
             else
             {
-                for(int i=0;i+1<Werte.Count(); i++)  //bug
+                for(int i=0;i-1<Werte.Count(); i++)  //bug
                 {
                     x = Werte[i + 1] - Werte[i];
                     Werte.RemoveAt(i);

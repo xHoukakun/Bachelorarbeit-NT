@@ -22,13 +22,11 @@ namespace Bachelorarbeit_NT
         static ulong n = Convert.ToUInt64(n1);
         CancellationTokenSource ctsrc = new CancellationTokenSource();
         public static bool saved = false;
-        static List<ulong> StatisticRootOfTwo = new List<ulong>();
-        static List<ulong> StatisticEuler = new List<ulong>();
-        static List<ulong> StatisticZeta3 = new List<ulong>();
+
         public Form1()
         {
             InitializeComponent();
-            var Start = new Starter(cpus, 40, 1_000,ctsrc.Token);
+            var Start = new Starter(cpus, 20, 1_000,ctsrc.Token);
     
 
         }
@@ -47,39 +45,6 @@ namespace Bachelorarbeit_NT
         {
             saved = true;
 
-        }
-        public static void Liste_RootOfTwo(List<ulong> Liste)
-        {
-            ulong Zähle = 0;
-            for (int i = 0; i<Liste.Count();i++)
-            {
-                StatisticRootOfTwo.Add(Liste[i]);
-                Zähle = Zähle + Liste[i];
-            }
-           
-            Console.WriteLine("RootOfTwo gesamt: {0}", Zähle);
-        }
-        public static void Liste_Euler(List<ulong> Liste)
-        {
-            ulong Zähle = 0;
-            for (int i = 0; i < Liste.Count(); i++)
-            {
-                StatisticEuler.Add(Liste[i]);
-                Zähle = Zähle + Liste[i];
-            }
-            
-            Console.WriteLine("Euler gesamt: {0}", Zähle);
-        }
-        public static void Liste_Zeta3(List<ulong> Liste)
-        {
-            ulong Zähle = 0;
-            for (int i = 0; i < Liste.Count(); i++)
-            {
-                StatisticZeta3.Add(Liste[i]);
-                Zähle = Zähle + Liste[i];
-            }
-         
-            Console.WriteLine("Zeta3 gesamt: {0}", Zähle);
         }
         private void Cancel()
         {

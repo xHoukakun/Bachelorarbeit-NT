@@ -6,7 +6,7 @@ using System.Text;
 using System.Collections.Generic;
 using System.Threading.Channels;
 using System.Threading;
-using System.Linq;
+
 
 namespace Hier_sind_Testinstanzen
 {
@@ -25,12 +25,6 @@ namespace Hier_sind_Testinstanzen
             {
                 Console.WriteLine(element);
             }
-            Console.WriteLine(Test.Max());
-            Console.WriteLine("For schleife:");
-            for(int i=0;i<Test.Count;i++)
-            {
-                Console.WriteLine(Test[i]);
-            }
             Console.WriteLine("Hallo");
             Test.RemoveAt(0);
             Console.WriteLine(Test[0]);
@@ -42,7 +36,7 @@ namespace Hier_sind_Testinstanzen
             {
                 Console.WriteLine(element);
             }
-           
+            
             Console.ReadKey();
 
            
