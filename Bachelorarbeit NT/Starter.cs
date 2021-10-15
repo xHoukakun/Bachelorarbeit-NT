@@ -127,81 +127,24 @@ namespace Bachelorarbeit_NT
                         {
                             case "RootOfTwo":
 
-                                if (AnzahlWurzel2 == AnzahlWerte)  //Hier passiert laufzeit optimierung. Wenn ich n werte habe brauche ich ja nur kleinere Werte. 
-                                {                                  
-                                    if (result > MaxWurzel2)
-                                    {
-
-                                    }
-                                    else if (result < MaxWurzel2)
-                                    {
+                                
                                         
-                                        await resultChan.WriteAsync(new Result(s, result));  //Warte bis du auf  Result schreiben kannst
-                                    }
-
-                                }
-                                else
-                                {
-                                    AnzahlWurzel2++;
-                                    if (result > MaxWurzel2)
-                                    {
-                                        MaxWurzel2 = result;
-                                    }
-
-                                    await resultChan.WriteAsync(new Result(s, result));  //Warte bis du auf Result schreiben kannst
-                                }
+                                await resultChan.WriteAsync(new Result(s, result));  //Warte bis du auf  Result schreiben kannst
+                                    
 
                                 break;
                             case "Euler":
-                                if (AnzahlEuler == AnzahlWerte)
-                                {
-                                    if (result > MaxEuler)
-                                    {
-
-                                    }
-                                    else if (result < MaxEuler)
-                                    {
-                                        
-                                        await resultChan.WriteAsync(new Result(s, result)); //Warte bis du auf Result schreiben kannst
-                                    }
-
-                                }
-                                else
-                                {
-                                    AnzahlEuler++;
-                                    if (result > MaxEuler)
-                                    {
-                                        MaxEuler = result;
-                                    }
+                              
 
                                     await resultChan.WriteAsync(new Result(s, result)); //Warte bis du auf Result schreiben kannst
-                                }
+                                
 
                                 break;
                             case "Zeta3":
-                                if (AnzahlZeta3 == AnzahlWerte)
-                                {
-                                    if (result > MaxZeta3)
-                                    {
-
-                                    }
-                                    else if (result < MaxZeta3)
-                                    {
-                                        
-                                        await resultChan.WriteAsync(new Result(s, result)); //Warte bis du auf Result schreiben kannst
-                                    }
-
-                                }
-                                else
-                                {
-                                    AnzahlZeta3++;
-                                    if (result > MaxZeta3)
-                                    {
-                                        MaxZeta3 = result;
-                                    }
+                                
 
                                     await resultChan.WriteAsync(new Result(s, result)); //Warte bis du auf Result schreiben kannst
-                                }
+                                
 
                                 break;
                             default: throw new ArgumentException();
@@ -390,6 +333,7 @@ namespace Bachelorarbeit_NT
         public async void HoldList(ChannelReader<Decimal> chReader, ChannelWriter<Decimal> chWriter)
         {
             List<Decimal> Ergebnisse = new List<Decimal>();
+            List<Decimal> Ergebnisse2 = new List<decimal>();
             ulong AnzahlListe = 0;
             decimal Maximum = 0;
             while (await chReader.WaitToReadAsync())    //diese beiden While Schleifen sorgen insbesondere dafür, dass es async ist.  Und man kein Deadlock szenario bekomm ( Auch bekannt als Philosophen Problem)
@@ -411,6 +355,7 @@ namespace Bachelorarbeit_NT
                             
                             Ergebnisse.Remove(Maximum);
                             Ergebnisse.Add(u);
+                            
                             Maximum = Ergebnisse.Max();
                         }
                     }
@@ -422,16 +367,19 @@ namespace Bachelorarbeit_NT
                     }
                     if(Ergebnisse.Count==20_000_000)
                     {
+                        var gc = new Thread(() => GC.Collect());
+                        gc.Start();
                         Abstandsrechner(Ergebnisse, chWriter);
+                        
                     }
 
                 }
             }
-            while(Ergebnisse.Count!=1)
-            {
-                Abstandsrechner(Ergebnisse, chWriter);
-            }
-            chWriter.TryComplete();
+            
+            
+            Abstandsrechner2(Ergebnisse, chWriter);
+            
+            
         }
         public async void Statistic(ChannelReader<Decimal> chReader, string Typ)
         {
@@ -451,7 +399,7 @@ namespace Bachelorarbeit_NT
                     decimal u = jobItem;
                     mIntervallRechner(u, Anzahl);
                     AWerte++;
-                    if (AWerte == 1000) //update Funktion für die Statistic
+                    if (AWerte == 100) //update Funktion für die Statistic
                     {
                         AWerte = 0;
                         switch (Typ)
@@ -613,14 +561,14 @@ namespace Bachelorarbeit_NT
 
                         Thread.Sleep(10000);
                    
-                        StreamWriter sw2 = new StreamWriter("Anzahl.txt");  //wenn alles Geschlossen ist werden einzelne Werte gespeichert.
-                                sw2.WriteLine(AnzahlWurzel2);
-                                sw2.WriteLine(MaxWurzel2);
-                                sw2.WriteLine(AnzahlEuler);
-                                sw2.WriteLine(MaxEuler);
-                                sw2.WriteLine(AnzahlZeta3);
-                                sw2.WriteLine(MaxZeta3);
-                                sw2.Close();
+                       // StreamWriter sw2 = new StreamWriter("Anzahl.txt");  //wenn alles Geschlossen ist werden einzelne Werte gespeichert.
+                         //       sw2.WriteLine(AnzahlWurzel2);
+                           //     sw2.WriteLine(MaxWurzel2);
+                             //   sw2.WriteLine(AnzahlEuler);
+                               // sw2.WriteLine(MaxEuler);
+                                //sw2.WriteLine(AnzahlZeta3);
+                                //sw2.WriteLine(MaxZeta3);
+                                //sw2.Close();
                                 Thread.Sleep(10000);
                                 Form1.save();
                                 return;
@@ -639,28 +587,40 @@ namespace Bachelorarbeit_NT
 
         }
         
-        public void Abstandsrechner(List<Decimal> Werte, ChannelWriter<Decimal> Abstand)
+        public async void Abstandsrechner(List<Decimal> Werte, ChannelWriter<Decimal> Abstand)
         {
             Werte.Sort();
             decimal x = 0;
             if (Werte.Count()>100)
             {
-                for (int i = 0; i < 100; i++)
+                for (int i = 0; i < 100; i++) 
                 {
-                    x = Werte[i + 1] - Werte[i];
-                    Werte.RemoveAt(i);
-                    Abstand.WriteAsync(x);
+                    x = Werte[1] - Werte[0];  //Da sich der index verschiebt muss man das so machen
+                    Werte.RemoveAt(0);
+                    await Abstand.WriteAsync(x);
                 }
             }
             else
             {
-                for(int i=0;i+1<Werte.Count(); i++)  //bug
+                for(int i=0;i+1<Werte.Count();)  //bug
                 {
-                    x = Werte[i + 1] - Werte[i];
-                    Werte.RemoveAt(i);
-                    Abstand.WriteAsync(x);
+                    x = Werte[1] - Werte[0];
+                    Werte.RemoveAt(0);
+                    await Abstand.WriteAsync(x);
                 }
             }
+        }
+        public async void Abstandsrechner2(List<Decimal> Werte, ChannelWriter<Decimal> Abstand)
+        {
+            Werte.Sort();
+            decimal x = 0;
+            for (int i = 0; i + 1 < Werte.Count();)  //bug
+            {
+                x = Werte[1] - Werte[0];
+                Werte.RemoveAt(0);
+               await Abstand.WriteAsync(x);
+            }
+           Abstand.TryComplete();
         }
         public void mIntervallRechner(decimal Abstand, List<ulong> Zähler) //implementation der Methode IntervallRechner;
         {

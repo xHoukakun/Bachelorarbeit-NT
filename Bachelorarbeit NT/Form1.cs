@@ -10,6 +10,7 @@ using System.Windows.Forms;
 using System.Threading.Tasks;
 using System.Data.SQLite;
 using System.IO;
+using System.Windows.Forms.DataVisualization.Charting;
 
 namespace Bachelorarbeit_NT
 {
@@ -25,11 +26,22 @@ namespace Bachelorarbeit_NT
         static List<ulong> StatisticRootOfTwo = new List<ulong>();
         static List<ulong> StatisticEuler = new List<ulong>();
         static List<ulong> StatisticZeta3 = new List<ulong>();
+        static bool Wurzel2aufgerufen = false;
+        static bool Euleraufgerufen = false;
+        static bool Zeta3aufgerufen = false;
+        static ulong uZeta3;
+        static ulong uRootOfTwo;
+        static ulong uEuler;
         public Form1()
         {
             InitializeComponent();
-            var Start = new Starter(cpus, 40, 1_000,ctsrc.Token);
-    
+            Series series = new Series();
+            button1.Enabled = true;
+            button2.Enabled = true;
+            button3.Enabled = true;
+            series.ChartType = SeriesChartType.Column;
+            var Start = new Starter(cpus, n, 1_000,ctsrc.Token);
+         
 
         }
 
@@ -50,35 +62,80 @@ namespace Bachelorarbeit_NT
         }
         public static void Liste_RootOfTwo(List<ulong> Liste)
         {
+
             ulong Zähle = 0;
-            for (int i = 0; i<Liste.Count();i++)
+            if(Wurzel2aufgerufen==false)
             {
-                StatisticRootOfTwo.Add(Liste[i]);
-                Zähle = Zähle + Liste[i];
+               
+                Wurzel2aufgerufen = true;
+                for (int i = 0; i < Liste.Count(); i++)
+                {
+                    StatisticRootOfTwo.Add(Liste[i]);
+
+                    Zähle = Zähle + Liste[i];
+                }
             }
+            else
+            {
+                for (int i = 0; i < Liste.Count(); i++)
+                {
+                    StatisticRootOfTwo[i] = Liste[i];
+
+                    Zähle = Zähle + Liste[i];
+                }
+            }
+            uRootOfTwo = Zähle;
            
             Console.WriteLine("RootOfTwo gesamt: {0}", Zähle);
+           
         }
         public static void Liste_Euler(List<ulong> Liste)
         {
             ulong Zähle = 0;
-            for (int i = 0; i < Liste.Count(); i++)
+            if(Euleraufgerufen==false)
             {
+                Euleraufgerufen = true;
+            
+                for (int i = 0; i < Liste.Count(); i++)
+                {
                 StatisticEuler.Add(Liste[i]);
                 Zähle = Zähle + Liste[i];
+                }
             }
-            
+            else
+            {
+                for (int i = 0; i < Liste.Count(); i++)
+                {
+                    StatisticEuler[i] = Liste[i];
+                    Zähle = Zähle + Liste[i];
+                }
+            }
+            uEuler = Zähle;
             Console.WriteLine("Euler gesamt: {0}", Zähle);
         }
         public static void Liste_Zeta3(List<ulong> Liste)
         {
             ulong Zähle = 0;
-            for (int i = 0; i < Liste.Count(); i++)
+           if(Zeta3aufgerufen==false)
             {
-                StatisticZeta3.Add(Liste[i]);
-                Zähle = Zähle + Liste[i];
+                Zeta3aufgerufen = true;
+                for (int i = 0; i < Liste.Count(); i++)
+                {
+                    StatisticZeta3.Add(Liste[i]);
+                    Zähle = Zähle + Liste[i];
+                }
+           }
+            else
+            {
+                for (int i = 0; i < Liste.Count(); i++)
+                {
+                    StatisticZeta3[i] = Liste[i];
+                    Zähle = Zähle + Liste[i];
+                }
+
             }
-         
+
+            uZeta3 = Zähle;
             Console.WriteLine("Zeta3 gesamt: {0}", Zähle);
         }
         private void Cancel()
@@ -87,6 +144,71 @@ namespace Bachelorarbeit_NT
         }
 
         private void chart1_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            ulong max = 0;
+            decimal Delta;
+            decimal GesamtIntervall = 10M;
+            Delta = GesamtIntervall / Convert.ToDecimal(1_000);
+            chart1.Series.Clear();
+            Series series = new Series();
+            series.ChartType = SeriesChartType.Column;
+            series.Name = "RootOfTwo";
+            chart1.Series.Add(series);
+            for (int i = 0; i < StatisticRootOfTwo.Count(); i++)
+            {
+                chart1.Series["RootOfTwo"].Points.AddXY(Convert.ToDecimal(i) * Delta, StatisticRootOfTwo[i]);
+                max = Math.Max(StatisticRootOfTwo[i], max);
+            }
+            chart1.ChartAreas[0].AxisY.Maximum = max;
+            Anzeige.Text = Convert.ToString(uRootOfTwo);
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            ulong max = 0;
+            decimal Delta;
+            decimal GesamtIntervall = 10M;
+            Delta = GesamtIntervall / Convert.ToDecimal(1_000);
+            chart1.Series.Clear();
+            Series series = new Series();
+            series.ChartType = SeriesChartType.Column;
+            series.Name = "Zeta3";
+            chart1.Series.Add(series);
+            for (int i = 0; i < StatisticZeta3.Count(); i++)
+            {
+                chart1.Series["Zeta3"].Points.AddXY(Convert.ToDecimal(i) * Delta, StatisticZeta3[i]);
+                max = Math.Max(StatisticZeta3[i], max);
+            }
+            chart1.ChartAreas[0].AxisY.Maximum = max;
+            Anzeige.Text = Convert.ToString(uZeta3);
+        }
+
+        private void button3_Click(object sender, EventArgs e)
+        {
+            decimal Delta;
+            decimal GesamtIntervall = 10M;
+            ulong max = 0;
+            Delta = GesamtIntervall / Convert.ToDecimal(1_000);
+            chart1.Series.Clear();
+            Series series = new Series();
+            series.ChartType = SeriesChartType.Column;
+            series.Name = "Euler";
+            chart1.Series.Add(series);
+            for (int i = 0; i < StatisticEuler.Count(); i++)
+            {
+                chart1.Series["Euler"].Points.AddXY(Convert.ToDecimal(i) * Delta, StatisticEuler[i]);
+                max = Math.Max(StatisticEuler[i], max);
+            }
+            chart1.ChartAreas[0].AxisY.Maximum = max;
+            Anzeige.Text = Convert.ToString(uEuler);
+        }
+
+        private void Anzeige_Click(object sender, EventArgs e)
         {
 
         }
