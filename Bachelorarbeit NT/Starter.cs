@@ -452,7 +452,7 @@ namespace Bachelorarbeit_NT
                 default: throw new ArgumentException(); //Falls es ein s gibt welches zu nichts passt
             }
 
-            //Hier muss dann die Statistik übergeben werden. ( Ich werde versuchen dies als PythonSkript zu machen;
+            
         }
 
            

@@ -54,13 +54,13 @@ namespace Bachelorarbeit_NT
             this.chart1.ChartAreas.Add(chartArea1);
             legend1.Name = "Legend1";
             this.chart1.Legends.Add(legend1);
-            this.chart1.Location = new System.Drawing.Point(12, 33);
+            this.chart1.Location = new System.Drawing.Point(12, 12);
             this.chart1.Name = "chart1";
             series1.ChartArea = "ChartArea1";
             series1.Legend = "Legend1";
             series1.Name = "Series1";
             this.chart1.Series.Add(series1);
-            this.chart1.Size = new System.Drawing.Size(979, 459);
+            this.chart1.Size = new System.Drawing.Size(1323, 573);
             this.chart1.TabIndex = 0;
             this.chart1.Text = "chart1";
             this.chart1.Click += new System.EventHandler(this.chart1_Click);
@@ -68,7 +68,7 @@ namespace Bachelorarbeit_NT
             // button1
             // 
             this.button1.Enabled = false;
-            this.button1.Location = new System.Drawing.Point(111, 535);
+            this.button1.Location = new System.Drawing.Point(109, 591);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(75, 23);
             this.button1.TabIndex = 1;
@@ -79,7 +79,7 @@ namespace Bachelorarbeit_NT
             // button2
             // 
             this.button2.Enabled = false;
-            this.button2.Location = new System.Drawing.Point(192, 534);
+            this.button2.Location = new System.Drawing.Point(200, 591);
             this.button2.Name = "button2";
             this.button2.Size = new System.Drawing.Size(75, 23);
             this.button2.TabIndex = 2;
@@ -90,7 +90,7 @@ namespace Bachelorarbeit_NT
             // button3
             // 
             this.button3.Enabled = false;
-            this.button3.Location = new System.Drawing.Point(273, 534);
+            this.button3.Location = new System.Drawing.Point(281, 591);
             this.button3.Name = "button3";
             this.button3.Size = new System.Drawing.Size(75, 23);
             this.button3.TabIndex = 3;
@@ -102,18 +102,18 @@ namespace Bachelorarbeit_NT
             // 
             this.Anzeige.AutoSize = true;
             this.Anzeige.Enabled = false;
-            this.Anzeige.Location = new System.Drawing.Point(895, 136);
+            this.Anzeige.Location = new System.Drawing.Point(1219, 98);
             this.Anzeige.Name = "Anzeige";
-            this.Anzeige.Size = new System.Drawing.Size(41, 13);
+            this.Anzeige.Size = new System.Drawing.Size(13, 13);
             this.Anzeige.TabIndex = 4;
-            this.Anzeige.Text = "sdfasdf";
+            this.Anzeige.Text = "0";
             this.Anzeige.Click += new System.EventHandler(this.Anzeige_Click);
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1003, 586);
+            this.ClientSize = new System.Drawing.Size(1386, 626);
             this.Controls.Add(this.Anzeige);
             this.Controls.Add(this.button3);
             this.Controls.Add(this.button2);
