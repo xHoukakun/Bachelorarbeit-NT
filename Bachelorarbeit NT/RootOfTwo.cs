@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Bachelorarbeit_NT
 {/// <summary>
@@ -13,13 +9,22 @@ namespace Bachelorarbeit_NT
 
         public RootOfTwo()
         {
-            alpha = Convert.ToDecimal(Math.Sqrt(2));
+            alpha = Convert.ToDecimal(Math.Sqrt(2)); //Das Alpha wird gesetzt
         }
-
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="c">Coordinate</param>
+        /// <returns>Gibt den Wert der Quadratischen Form zurück</returns>
         public override decimal CalcQuadratic(Coordinate c)
         {
             return c.x * c.x + alpha * c.y * c.y;
         }
+        /// <summary>
+        /// Gibt das Alpha zurück
+        /// </summary>
+        /// <param name="c">Coordinate</param>
+        /// <returns></returns>
         public override string Alpha(Coordinate c)
         {
             return "RootOfTwo";

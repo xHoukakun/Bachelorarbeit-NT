@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Bachelorarbeit_NT
+﻿namespace Bachelorarbeit_NT
 {
     public abstract class Term
     {
@@ -19,9 +13,7 @@ namespace Bachelorarbeit_NT
             Euler,
         }
 
-        /// <summary>
-        /// @TODO Weitere Enums setzen um damit halt die ganzen dinger unterscheiden zu können.
-        /// </summary>
+  
         public decimal alpha { get; set; }
 
 
@@ -39,7 +31,7 @@ namespace Bachelorarbeit_NT
         public abstract decimal CalcQuadratic(Coordinate c);
         public abstract string Alpha(Coordinate c);
 
-        
+
 
     }
 }

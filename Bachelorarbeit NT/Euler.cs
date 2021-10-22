@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Bachelorarbeit_NT
 {/// <summary>
@@ -10,7 +6,7 @@ namespace Bachelorarbeit_NT
 /// </summary>
     public class Euler : Term
     {
-
+       //Für Code Kommentare siehe Klasse RootOfTwo, diese Klassen sind implementieren die Abstrakte Klasse Term
         public Euler()
         {
             alpha = Convert.ToDecimal(Math.E);

@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-
-namespace Bachelorarbeit_NT
+﻿namespace Bachelorarbeit_NT
 {
     public class Coordinate
     {
@@ -14,17 +7,20 @@ namespace Bachelorarbeit_NT
         private Term t { get; set; }
         public decimal x = 1;
         public decimal y = 1;
+        public ulong n = 1;
         /// <summary>
         /// Konstruktor der Coordinate Klasse
         /// </summary>
         /// <param name="_t">Referenz auf den Term</param>
         /// <param name="_x">x coordinate</param>
         /// <param name="_y">y Coordinate</param>
-        public Coordinate(Term _t, decimal _x, decimal _y)
+        /// <param name="_n">n Coordinate</param>
+        public Coordinate(Term _t, decimal _x, decimal _y, ulong _n)
         {
             y = _y;
             x = _x;
             t = _t;
+            n = _n;
         }
 
 
@@ -36,10 +32,18 @@ namespace Bachelorarbeit_NT
         {
             return t.CalcQuadratic(this);
         }
+        /// <summary>
+        /// Gebe das Alpha zurück
+        /// </summary>
+        /// <returns>Alpha</returns>
         public string Alpha()
         {
             return t.Alpha(this);
         }
-       
+
+        public ulong get_n()
+        {
+            return n;
+        }
     }
 }

@@ -138,9 +138,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BigDecimal.cs" />
     <Compile Include="Coordinate.cs" />
     <Compile Include="Euler.cs" />
+    <Compile Include="ExtDecimal.cs" />
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -149,6 +149,7 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Result.cs" />
     <Compile Include="RootOfTwo.cs" />
     <Compile Include="Starter.cs" />
     <Compile Include="Term.cs" />

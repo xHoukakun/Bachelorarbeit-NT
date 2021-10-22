@@ -5,7 +5,7 @@ VisualStudioVersion = 16.0.31702.278
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bachelorarbeit NT", "Bachelorarbeit NT\Bachelorarbeit NT.csproj", "{39A7148A-39D4-4FDC-9DBF-1DF82FC3E287}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hier sind Testinstanzen", "Hier sind Testinstanzen\Hier sind Testinstanzen.csproj", "{164492C9-A7B9-44C8-BC41-6691E32607A6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Hier sind Testinstanzen", "Hier sind Testinstanzen\Hier sind Testinstanzen.csproj", "{164492C9-A7B9-44C8-BC41-6691E32607A6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
