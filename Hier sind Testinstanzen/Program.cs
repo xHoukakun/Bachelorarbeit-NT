@@ -1,18 +1,44 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.SQLite;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Threading.Channels;
+
 
 namespace Hier_sind_Testinstanzen
 {
     class Program
     {
+        static int workernum = 0;
         static void Main(string[] args)
         {
 
-            string t = "test";
-            StreamWriter sw = new StreamWriter(t + ".txt");
+            Channel<int> JobChan = Channel.CreateBounded<int>(1024);
+            Channel<int> ResultChan = Channel.CreateBounded<int>(1024);
+
+
+            var a = new Thread(() => ender(ResultChan));
+            a.Start();
+            var b = new Thread(() => worker(ResultChan, JobChan, ResultChan));
+            b.Start();
+            var c = new Thread(() => worker(ResultChan, JobChan, ResultChan));
+            c.Start();
+            var b1 = new Thread(() => worker(ResultChan, JobChan, ResultChan));
+            b1.Start();
+            var c1 = new Thread(() => worker(ResultChan, JobChan, ResultChan));
+            c1.Start();
+            var b2 = new Thread(() => worker(ResultChan, JobChan, ResultChan));
+            b2.Start();
+            var c3 = new Thread(() => worker(ResultChan, JobChan, ResultChan));
+            c3.Start();
+            var d = new Thread(() => producer(10000, JobChan));
+            d.Start();
+            Console.ReadKey();
+
+
 
 
 
@@ -169,6 +195,49 @@ namespace Hier_sind_Testinstanzen
                 transaction.CommitAsync();
                 con.CloseAsync();
             }*/
+        }
+        public static async void producer(int n, ChannelWriter<int> jobChan)
+        {
+            for(int i = 0; i < n; i++)
+            {
+                await jobChan.WriteAsync(i);
+            }
+            jobChan.TryComplete();
+            return;
+        }
+        public static async void worker(ChannelWriter<int> ResultChan, ChannelReader<int> jobChan, ChannelReader<int> ResultChanRead)
+        {
+            while (await jobChan.WaitToReadAsync()) //Warte bis irgendwas in der queue ist um es zu berechnen
+            {
+                while (jobChan.TryRead(out var jobItem)) //wenn etwas in der Queue ist versuche es zu nehmen
+                {
+                    int u = jobItem;
+                    await ResultChan.WriteAsync(u);
+                }
+            }
+            workernum++;
+            while(!ResultChanRead.Completion.IsCompleted)
+            {
+                Thread.Sleep(1000);
+                if(workernum>=1)
+                {
+                    Console.WriteLine("Fertig");
+                    ResultChan.TryComplete();
+                }
+            }
+            return;
+        }
+        public static async void ender(ChannelReader<int> jobChan)
+        {
+            while (await jobChan.WaitToReadAsync()) //Warte bis irgendwas in der queue ist um es zu berechnen
+            {
+                while (jobChan.TryRead(out var jobItem))
+                {
+                    Console.WriteLine(jobItem);
+                }
+            }
+            Console.ReadKey();
+            return;
         }
         public static List<decimal> InsertionSort(decimal insert, List<decimal> Liste)
         {
