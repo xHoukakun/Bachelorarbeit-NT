@@ -34,7 +34,7 @@ namespace Hier_sind_Testinstanzen
             b2.Start();
             var c3 = new Thread(() => worker(ResultChan, JobChan, ResultChan));
             c3.Start();
-            var d = new Thread(() => producer(10000, JobChan));
+            var d = new Thread(() => producer(100000, JobChan));
             d.Start();
             Console.ReadKey();
 
@@ -219,7 +219,7 @@ namespace Hier_sind_Testinstanzen
             while(!ResultChanRead.Completion.IsCompleted)
             {
                 Thread.Sleep(1000);
-                if(workernum>=1)
+                if(workernum>=6)
                 {
                     Console.WriteLine("Fertig");
                     ResultChan.TryComplete();

@@ -83,7 +83,7 @@ namespace Bachelorarbeit_NT
             worker.Add(controller);
             for (int i = 0; i < workerNum; i++)
             {
-                var trh = new Thread(() => Worker(jobChannel, resultChannel, cToken, N));        //hier werden Worker erstellt mittels lambda ausdruck man braucht hier eine Anonyme Funktion der man diese Parameter übergibt
+                var trh = new Thread(() => Worker(jobChannel, resultChannel,resultChannel, cToken, N));        //hier werden Worker erstellt mittels lambda ausdruck man braucht hier eine Anonyme Funktion der man diese Parameter übergibt
                 trh.Start();                                                                    //beispiel für einen "verständlicheren" Lambda findet man unten
                 worker.Add(trh);                                                                //ich kenne den Worker ja sogesehen nicht. Der bekommt erst später einen genauen Typen.
             }
@@ -94,7 +94,7 @@ namespace Bachelorarbeit_NT
 
         }
 
-        public async void Worker(ChannelReader<Coordinate> jobChan, ChannelWriter<Result> resultChan, CancellationToken cToken, ulong N)
+        public async void Worker(ChannelReader<Coordinate> jobChan, ChannelWriter<Result> resultChan,ChannelReader<Result> resultChan2, CancellationToken cToken, ulong N)
         {
             while (await jobChan.WaitToReadAsync()) //Warte bis irgendwas in der queue ist um es zu berechnen
             {
@@ -108,11 +108,14 @@ namespace Bachelorarbeit_NT
 
             }
             workerFinished++; //wenn der JobChannel Geschlossen wird dann werden die Fertigen Arbeiter gezählt 
-            Thread.Sleep(2000);
-            if (workerNum == workerFinished) //Wenn alle Arbeiter Fertig sind wird der ResultChannel geschlossen
+            while(!resultChan2.Completion.IsCompleted)
             {
-                resultChan.TryComplete();  // hier wird der ResultChannel Geschlossen.
+                if (workerNum <= workerFinished) //Wenn alle Arbeiter Fertig sind wird der ResultChannel geschlossen
+                {
+                    resultChan.TryComplete();  // hier wird der ResultChannel Geschlossen.
+                }
             }
+         
             return;
         }
         public async void JobProducer(ChannelWriter<Coordinate> jobChan, CancellationToken cToken, ulong ende)
