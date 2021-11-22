@@ -6,6 +6,8 @@ using System.Linq;
 using System.Threading;
 using System.Windows.Forms;
 using System.Windows.Forms.DataVisualization.Charting;
+using System.Data;
+using MathNet.Numerics.Distributions;
 
 namespace Bachelorarbeit_NT
 {
@@ -33,6 +35,12 @@ namespace Bachelorarbeit_NT
         static decimal maxE;
         static decimal minZ;
         static decimal maxZ;
+        static decimal meanZ;
+        static decimal meanE;
+        static decimal meanR;
+        static decimal Delta;
+        
+        
         private bool delete = false;  //Falls die Dateien Gelöscht werden sollen
 
         public Form1()
@@ -44,7 +52,7 @@ namespace Bachelorarbeit_NT
             button3.Enabled = true;
             series.ChartType = SeriesChartType.Column;    
             var Start = new Starter(cpus, n, Convert.ToInt32(AnzahlIntervalle), GesamtIntervall, ctsrc.Token);   //hier wird die Starter Klasse aufgerufen
-
+            Delta = GesamtIntervall/Convert.ToDecimal(AnzahlIntervalle);
 
         }
 
@@ -66,7 +74,8 @@ namespace Bachelorarbeit_NT
         public static void Liste_RootOfTwo(List<ulong> Liste, decimal Minimum, decimal Maximum) 
         {
             minR = Minimum;   //gebe min und Max wieder
-            maxR = Maximum;   
+            maxR = Maximum;
+            decimal tmp = 0.0M;
             ulong Zähle = 0;
             if (Wurzel2aufgerufen == false) //falls es das erste Mal aufgerufen wurde
             {
@@ -75,7 +84,7 @@ namespace Bachelorarbeit_NT
                 for (int i = 0; i < Liste.Count(); i++)  //Die Liste Befüllen
                 {
                     StatisticRootOfTwo.Add(Liste[i]);
-
+                    tmp = tmp + (Delta * Convert.ToDecimal(i) + (Delta / 2)) * Liste[i];
                     Zähle = Zähle + Liste[i];
                 }
             }
@@ -83,14 +92,17 @@ namespace Bachelorarbeit_NT
             {
                 for (int i = 0; i < Liste.Count(); i++)
                 {
-                    StatisticRootOfTwo[i] = Liste[i];
-
+                    StatisticRootOfTwo[i] = Liste[i];                   
                     Zähle = Zähle + Liste[i];
+                    tmp = tmp + (Delta * Convert.ToDecimal(i) + (Delta / 2)) * Liste[i];
                 }
             }
             uRootOfTwo = Zähle;
+          
+            meanR = tmp/Convert.ToDecimal(uRootOfTwo);
 
             Console.WriteLine("RootOfTwo gesamt: {0}", Zähle);
+            Console.WriteLine("Mean RootOfTwo: {0}", meanR);
 
         }
         public static void Liste_Euler(List<ulong> Liste, decimal Minimum, decimal Maximum)
@@ -160,7 +172,11 @@ namespace Bachelorarbeit_NT
         {
             ulong max = 0;
             decimal Delta;
-
+            decimal funktionswert;
+            DataTable RootOfTwo = new DataTable();
+            RootOfTwo.Columns.Add("X_Value", typeof(decimal));
+            RootOfTwo.Columns.Add("Y_Value", typeof(decimal));
+            Poisson poi = new Poisson(Convert.ToDouble(meanR));
             Delta = GesamtIntervall / Convert.ToDecimal(AnzahlIntervalle);
             chart1.Annotations.Clear();
             chart1.Series.Clear();
@@ -168,14 +184,30 @@ namespace Bachelorarbeit_NT
             series.ChartType = SeriesChartType.Column;
             series.Name = "RootOfTwo";
             chart1.Series.Add(series);
+            Series series1 = new Series();
+            series1.ChartType = SeriesChartType.FastLine;
+            series1.Name = "Series1";
+            chart1.Series.Add(series1);
             for (int i = 0; i < StatisticRootOfTwo.Count(); i++)
             {
+
+                funktionswert = Convert.ToDecimal(poi.Probability(i))*Convert.ToDecimal(uRootOfTwo);
+                RootOfTwo.Rows.Add(((i * Delta) + Delta / 2), funktionswert);
+                Console.WriteLine("i={0} poi={1}", i, funktionswert);
                 chart1.Series["RootOfTwo"].Points.AddXY(Convert.ToDecimal(i) * Delta, StatisticRootOfTwo[i]);
                 max = Math.Max(StatisticRootOfTwo[i], max);
+              
             }
             chart1.ChartAreas[0].AxisY.Maximum = Math.Ceiling(Convert.ToDouble(max * 1.10d));
             My_Text_Annotation(uRootOfTwo, maxR, minR);
+            chart1.DataSource = RootOfTwo;
+            chart1.Series["Series1"].XValueMember = "X_Value";
+            chart1.Series["Series1"].YValueMembers = "Y_Value";
+            chart1.Series["Series1"].ChartType = SeriesChartType.FastLine;
+            chart1.ChartAreas[0].AxisY.LabelStyle.Format = "";
+
         }
+  
 
         private void button2_Click(object sender, EventArgs e)
         {
