@@ -94,7 +94,7 @@ namespace Bachelorarbeit_NT
                 {
                     StatisticRootOfTwo[i] = Liste[i];                   
                     Zähle = Zähle + Liste[i];
-                    tmp = tmp + (Delta * Convert.ToDecimal(i) + (Delta / 2)) * Liste[i];
+                    tmp = tmp + ((Delta * Convert.ToDecimal(i) + (Delta / 2))) * Liste[i];
                 }
             }
             uRootOfTwo = Zähle;
@@ -191,7 +191,7 @@ namespace Bachelorarbeit_NT
             for (int i = 0; i < StatisticRootOfTwo.Count(); i++)
             {
 
-                funktionswert = Convert.ToDecimal(poi.Probability(i))*Convert.ToDecimal(uRootOfTwo);
+                funktionswert = Convert.ToDecimal(poi.Probability(i))*Convert.ToDecimal(uRootOfTwo)*6400;
                 RootOfTwo.Rows.Add(((i * Delta) + Delta / 2), funktionswert);
                 Console.WriteLine("i={0} poi={1}", i, funktionswert);
                 chart1.Series["RootOfTwo"].Points.AddXY(Convert.ToDecimal(i) * Delta, StatisticRootOfTwo[i]);
