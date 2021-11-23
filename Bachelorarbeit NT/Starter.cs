@@ -30,6 +30,9 @@ namespace Bachelorarbeit_NT
         ulong AnzahlWerte = 0;
         public int AnzahlIntervalle = 0;
         bool Fehler = false;
+        decimal sx;
+        decimal sy;
+
 
 
 
@@ -148,12 +151,8 @@ namespace Bachelorarbeit_NT
                     AnzahlJobs++;
                     if (cToken.IsCancellationRequested == true) //Wenn das Programm enden soll dann wird der JobChan zu gemacht
                     {
-
-                        StreamWriter sw = new StreamWriter("Merken" + ".txt");
-                        sw.WriteLine(x);   //erst x
-                        sw.WriteLine(y);    //dann y
-                        sw.WriteLine(AnzahlJobs); //Dann die Anzahl an Jobs
-                        sw.Close();
+                        sx = x;
+                        sy = y;
                         jobChan.TryComplete();
                         return;
                     }
@@ -178,12 +177,8 @@ namespace Bachelorarbeit_NT
                     AnzahlJobs++;
                     if (cToken.IsCancellationRequested == true) //Wenn das Programm enden soll dann wird der JobChan zu gemacht
                     {
-
-                        StreamWriter sw = new StreamWriter("Merken" + ".txt");
-                        sw.WriteLine(x);   //erst x
-                        sw.WriteLine(y);    //dann y
-                        sw.WriteLine(AnzahlJobs); //Dann die Anzahl an Jobs
-                        sw.Close();
+                        sx = x;
+                        sy = y;
                         jobChan.TryComplete();
                         return;
 
@@ -414,29 +409,7 @@ namespace Bachelorarbeit_NT
                     Anzahl.Add(Convert.ToUInt64(reader.ReadLine()));
                     reader.Close();
 
-                    switch (Typ) //Welchen Typen hat die Statistik: rufe dann die jeweilige Funktion auf der Form auf.
-                    {
-                        case "RootOfTwo":
-                            Form1.Liste_RootOfTwo(Anzahl, Minimum, Maximum);
-
-                            break;
-
-
-                        case "Zeta3":
-
-                            Form1.Liste_Zeta3(Anzahl, Minimum, Maximum);
-
-
-
-                            break;
-                        case "Euler":
-                            Form1.Liste_Euler(Anzahl, Minimum, Maximum);
-
-
-
-                            break;
-                        default: throw new ArgumentException(); //Falls es ein s gibt welches zu nichts passt
-                    }
+                   
                 }
             }
             else //Falls diese Dateien nicht existieren gibt es auch keine Statistik. Diese muss erstellt werden.
@@ -487,29 +460,32 @@ namespace Bachelorarbeit_NT
                     }
                 }
             }//Falls der Channel beendet wurde wird nochmal die funktion geupdatet
-            switch (Typ)
+            if (AWerte != 0)
             {
-                case "RootOfTwo":
-                    Form1.Liste_RootOfTwo(Anzahl, Minimum, Maximum);
+                switch (Typ)
+                {
+                    case "RootOfTwo":
+                        Form1.Liste_RootOfTwo(Anzahl, Minimum, Maximum);
 
-                    break;
-
-
-                case "Zeta3":
-
-                    Form1.Liste_Zeta3(Anzahl, Minimum, Maximum);
+                        break;
 
 
+                    case "Zeta3":
 
-                    break;
-                case "Euler":
-                    Form1.Liste_Euler(Anzahl, Minimum, Maximum);
+                        Form1.Liste_Zeta3(Anzahl, Minimum, Maximum);
 
 
 
-                    break;
-                default: throw new ArgumentException(); //Falls es ein s gibt welches zu nichts passt
-            }
+                        break;
+                    case "Euler":
+                        Form1.Liste_Euler(Anzahl, Minimum, Maximum);
+
+
+
+                        break;
+                    default: throw new ArgumentException(); //Falls es ein s gibt welches zu nichts passt
+                }
+            }            
             StreamWriter sw = new StreamWriter(Typ + "Statistik.txt");  //Speichere die Ganzen werte.
             sw.WriteLine(Minimum);  //Erst Minimum
             sw.WriteLine(Maximum);  //Dann Maximum
@@ -645,6 +621,11 @@ namespace Bachelorarbeit_NT
                 {
                     if (File.Exists("EulerStatistik.txt") && File.Exists("Zeta3Statistik.txt") && File.Exists("RootOfTwoStatistik.txt"))
                     {
+                        StreamWriter sw = new StreamWriter("Merken" + ".txt");
+                        sw.WriteLine(sx);   //erst x
+                        sw.WriteLine(sy);    //dann y
+                        sw.WriteLine(AnzahlJobs); //Dann die Anzahl an Jobs
+                        sw.Close();
                         Form1.save(); //Wenn alles gespeichert wurde dann beende alles.
                         return;
                     }
@@ -665,8 +646,12 @@ namespace Bachelorarbeit_NT
                         if (File.Exists("EulerStatistik.txt") && File.Exists("Zeta3Statistik.txt") && File.Exists("RootOfTwoStatistik.txt"))
                         {
                             string[] del = { "Zeta3", "Euler", "RootOfTwo" };
-
-                            Thread.Sleep(10000);
+                            StreamWriter sw = new StreamWriter("Merken" + ".txt");
+                            sw.WriteLine(sx);   //erst x
+                            sw.WriteLine(sy);    //dann y
+                            sw.WriteLine(AnzahlJobs); //Dann die Anzahl an Jobs
+                            sw.Close();
+                            Thread.Sleep(1000);
                             if (Fehler == true) //Falls ein Fehler aufgetreten ist dann soll alles gelöscht werden werden.
                             {
                                 if (File.Exists("Merken.txt"))
@@ -685,11 +670,11 @@ namespace Bachelorarbeit_NT
                                     }
                                 }
                                 Console.WriteLine("EtwasIstSchiefGelaufen");
-                                Thread.Sleep(10000);
+                                Thread.Sleep(1000);
                                 Form1.save(); //beende das programm
                                 return;
                             }
-                            Thread.Sleep(10000);
+                            Thread.Sleep(1000);
                             Form1.save();
                             return;
                         }

@@ -35,27 +35,139 @@ namespace Bachelorarbeit_NT
         static decimal maxE;
         static decimal minZ;
         static decimal maxZ;
-        static decimal meanZ;
+        static decimal meanZ;                   //Durchschnitt von Zeta3 
+        static List<decimal> propR = new List<decimal>();    //Wahrscheinlichkeitsvektoren von den Abständen
+        static List<decimal> propE = new List<decimal>();
+        static List<decimal> propZ = new List<decimal>();
         static decimal meanE;
         static decimal meanR;
-        static decimal Delta;
-        
-        
+        static decimal Delta;              
         private bool delete = false;  //Falls die Dateien Gelöscht werden sollen
+        static List<decimal> DelMinR = new List<decimal>();
+        static List<decimal> DelMaxR = new List<decimal>();
+        static List<decimal> DelMinE = new List<decimal>();
+        static List<decimal> DelMaxE = new List<decimal>();
+        static List<decimal> DelMinZ = new List<decimal>();
+        static List<decimal> DelMaxZ = new List<decimal>();
+       
+
 
         public Form1()
         {
             InitializeComponent();   //Visual studio code
-            Series series = new Series();       //Relevant für die Chart
             button1.Enabled = true;             // aktiviert die Button 1 2 und 3 diese sind für das wechseln der Statistik verantwortlich. 
             button2.Enabled = true;
             button3.Enabled = true;
-            series.ChartType = SeriesChartType.Column;    
+            DelLesen();
             var Start = new Starter(cpus, n, Convert.ToInt32(AnzahlIntervalle), GesamtIntervall, ctsrc.Token);   //hier wird die Starter Klasse aufgerufen
             Delta = GesamtIntervall/Convert.ToDecimal(AnzahlIntervalle);
-
+            
         }
+        private void DelLesen() //MethodeZumAuslesenDerAbstandsfunktion
+        {
+            if (File.Exists("EulerMin.txt"))   //Die Gespeicherten Daten Auslesen.
+            {
 
+
+                string line;
+                string hile = "EulerMin.txt";
+                StreamReader reader = new StreamReader(hile);
+
+                line = reader.ReadLine();
+                while (line != null)  //Lese solange die Zeile nicht null ist, man weiß nicht wie Lang die Liste genau ist. Man könnte dies Zwar noch dazu speichern aber das wäre unnötig
+                {
+                    DelMinE.Add(Convert.ToDecimal(line));
+                    line = reader.ReadLine();
+                }
+                reader.Close();
+
+            }
+            if (File.Exists("EulerMax.txt"))   //Die Gespeicherten Daten Auslesen.
+            {
+
+
+                string line;
+                string hile = "EulerMax.txt";
+                StreamReader reader = new StreamReader(hile);
+
+                line = reader.ReadLine();
+                while (line != null)  //Lese solange die Zeile nicht null ist, man weiß nicht wie Lang die Liste genau ist. Man könnte dies Zwar noch dazu speichern aber das wäre unnötig
+                {
+                    DelMaxE.Add(Convert.ToDecimal(line));
+                    line = reader.ReadLine();
+                }
+                reader.Close();
+
+            }
+            if (File.Exists("Zeta3Max.txt"))   //Die Gespeicherten Daten Auslesen.
+            {
+
+
+                string line;
+                string hile = "Zeta3Max.txt";
+                StreamReader reader = new StreamReader(hile);
+
+                line = reader.ReadLine();
+                while (line != null)  //Lese solange die Zeile nicht null ist, man weiß nicht wie Lang die Liste genau ist. Man könnte dies Zwar noch dazu speichern aber das wäre unnötig
+                {
+                    DelMaxZ.Add(Convert.ToDecimal(line));
+                    line = reader.ReadLine();
+                }
+                reader.Close();
+
+            }
+            if (File.Exists("Zeta3Min.txt"))   //Die Gespeicherten Daten Auslesen.
+            {
+
+
+                string line;
+                string hile = "Zeta3Min.txt";
+                StreamReader reader = new StreamReader(hile);
+
+                line = reader.ReadLine();
+                while (line != null)  //Lese solange die Zeile nicht null ist, man weiß nicht wie Lang die Liste genau ist. Man könnte dies Zwar noch dazu speichern aber das wäre unnötig
+                {
+                    DelMinZ.Add(Convert.ToDecimal(line));
+                    line = reader.ReadLine();
+                }
+                reader.Close();
+
+            }
+            if (File.Exists("RootOfTwoMin.txt"))   //Die Gespeicherten Daten Auslesen.
+            {
+
+
+                string line;
+                string hile = "RootOfTwoMin.txt";
+                StreamReader reader = new StreamReader(hile);
+
+                line = reader.ReadLine();
+                while (line != null)  //Lese solange die Zeile nicht null ist, man weiß nicht wie Lang die Liste genau ist. Man könnte dies Zwar noch dazu speichern aber das wäre unnötig
+                {
+                    DelMinR.Add(Convert.ToDecimal(line));
+                    line = reader.ReadLine();
+                }
+                reader.Close();
+
+            }
+            if (File.Exists("RootOfTwoMax.txt"))   //Die Gespeicherten Daten Auslesen.
+            {
+
+
+                string line;
+                string hile = "RootOfTwoMax.txt";
+                StreamReader reader = new StreamReader(hile);
+
+                line = reader.ReadLine();
+                while (line != null)  //Lese solange die Zeile nicht null ist, man weiß nicht wie Lang die Liste genau ist. Man könnte dies Zwar noch dazu speichern aber das wäre unnötig
+                {
+                    DelMaxR.Add(Convert.ToDecimal(line));
+                    line = reader.ReadLine();
+                }
+                reader.Close();
+
+            }
+        }
         private void Form1_Load(object sender, EventArgs e)
         {
 
@@ -77,15 +189,27 @@ namespace Bachelorarbeit_NT
             maxR = Maximum;
             decimal tmp = 0.0M;
             ulong Zähle = 0;
+            if(DelMinR.Count()<100)
+            {
+                DelMinR.Add(minR);
+                DelMaxR.Add(maxR);
+            }
             if (Wurzel2aufgerufen == false) //falls es das erste Mal aufgerufen wurde
             {
 
                 Wurzel2aufgerufen = true;                    
                 for (int i = 0; i < Liste.Count(); i++)  //Die Liste Befüllen
                 {
-                    StatisticRootOfTwo.Add(Liste[i]);
-                    tmp = tmp + (Delta * Convert.ToDecimal(i) + (Delta / 2)) * Liste[i];
+                    StatisticRootOfTwo.Add(Liste[i]);                    
                     Zähle = Zähle + Liste[i];
+                }
+                for(int i = 0;i<Liste.Count();i++)
+                {
+                    if (Zähle != 0)
+                    {
+                        propR.Add(Convert.ToDecimal(Liste[i]) / Convert.ToDecimal(Zähle));   //Rechne den Wahrscheinlichkeitsvektor aus
+                        tmp += Convert.ToDecimal(i) * propR[i];
+                    }
                 }
             }
             else
@@ -94,22 +218,37 @@ namespace Bachelorarbeit_NT
                 {
                     StatisticRootOfTwo[i] = Liste[i];                   
                     Zähle = Zähle + Liste[i];
-                    tmp = tmp + ((Delta * Convert.ToDecimal(i) + (Delta / 2))) * Liste[i];
+                   
+                }
+                for(int i = 0; i < Liste.Count();i++)
+                {
+                    if (Zähle != 0)
+                    {
+                        propR[i] = Convert.ToDecimal(Liste[i]) / Convert.ToDecimal(Zähle);
+                        tmp += Convert.ToDecimal(i) * propR[i];
+                    }
                 }
             }
+            
             uRootOfTwo = Zähle;
-          
-            meanR = tmp/Convert.ToDecimal(uRootOfTwo);
+            meanR = tmp;
+            
 
             Console.WriteLine("RootOfTwo gesamt: {0}", Zähle);
-            Console.WriteLine("Mean RootOfTwo: {0}", meanR);
+            Console.WriteLine("Mean RootOfTwo: {0}", meanR*Delta);
 
         }
         public static void Liste_Euler(List<ulong> Liste, decimal Minimum, decimal Maximum)
         {
             minE = Minimum;
             maxE = Maximum;
+            decimal tmp = 0.0M;
             ulong Zähle = 0;
+            if (DelMinE.Count() < 100)
+            {
+                DelMinE.Add(minE);
+                DelMaxE.Add(maxE);
+            }
             if (Euleraufgerufen == false)
             {
                 Euleraufgerufen = true;
@@ -119,6 +258,15 @@ namespace Bachelorarbeit_NT
                     StatisticEuler.Add(Liste[i]);
                     Zähle = Zähle + Liste[i];
                 }
+                for (int i = 0; i < Liste.Count(); i++)
+                {
+                    if(Zähle != 0)
+                    {
+                        propE.Add(Convert.ToDecimal(Liste[i]) / Convert.ToDecimal(Zähle));
+                        tmp += Convert.ToDecimal(i) * propE[i];
+                    }
+
+                }
             }
             else
             {
@@ -127,15 +275,32 @@ namespace Bachelorarbeit_NT
                     StatisticEuler[i] = Liste[i];
                     Zähle = Zähle + Liste[i];
                 }
+                for (int i = 0; i < Liste.Count(); i++)
+                {
+                    if (Zähle != 0)
+                    {
+                        propE[i] = Convert.ToDecimal(Liste[i]) / Convert.ToDecimal(Zähle);
+                        tmp += Convert.ToDecimal(i) * propE[i];
+                    }
+                }
             }
             uEuler = Zähle;
+            meanE = tmp;
             Console.WriteLine("Euler gesamt: {0}", Zähle);
+            Console.WriteLine("Mean Euler: {0}", meanE*Delta);
         }
         public static void Liste_Zeta3(List<ulong> Liste, decimal Minimum, decimal Maximum)
         {
+
             minZ = Minimum;  
             maxZ = Maximum;
+            decimal tmp=0;
             ulong Zähle = 0;
+            if (DelMinZ.Count() < 100)
+            {
+                DelMinZ.Add(minZ);
+                DelMaxZ.Add(maxZ);
+            }
             if (Zeta3aufgerufen == false)
             {
                 Zeta3aufgerufen = true;
@@ -143,6 +308,15 @@ namespace Bachelorarbeit_NT
                 {
                     StatisticZeta3.Add(Liste[i]);
                     Zähle = Zähle + Liste[i];
+
+                }
+                for (int i = 0; i < Liste.Count(); i++)
+                {
+                    if (Zähle != 0)
+                    {
+                        propZ.Add(Convert.ToDecimal(Liste[i]) / Convert.ToDecimal(Zähle));
+                        tmp += Convert.ToDecimal(i) * propZ[i];
+                    }
                 }
             }
             else
@@ -152,11 +326,19 @@ namespace Bachelorarbeit_NT
                     StatisticZeta3[i] = Liste[i];
                     Zähle = Zähle + Liste[i];
                 }
-
+                for (int i = 0; i < Liste.Count(); i++)
+                {
+                    if (Zähle != 0)
+                    {
+                        propZ.Add(Convert.ToDecimal(Liste[i]) / Convert.ToDecimal(Zähle));
+                        tmp += Convert.ToDecimal(i) * propZ[i];
+                    }
+                }
             }
-
+            meanZ = tmp;
             uZeta3 = Zähle;
             Console.WriteLine("Zeta3 gesamt: {0}", Zähle);
+            Console.WriteLine("Mean Zeta3: {0}", meanZ*Delta);
         }
         private void Cancel()
         {
@@ -170,88 +352,135 @@ namespace Bachelorarbeit_NT
 
         private void button1_Click(object sender, EventArgs e)
         {
-            ulong max = 0;
-            decimal Delta;
-            decimal funktionswert;
-            DataTable RootOfTwo = new DataTable();
-            RootOfTwo.Columns.Add("X_Value", typeof(decimal));
-            RootOfTwo.Columns.Add("Y_Value", typeof(decimal));
-            Poisson poi = new Poisson(Convert.ToDouble(meanR));
-            Delta = GesamtIntervall / Convert.ToDecimal(AnzahlIntervalle);
-            chart1.Annotations.Clear();
-            chart1.Series.Clear();
-            Series series = new Series();
-            series.ChartType = SeriesChartType.Column;
-            series.Name = "RootOfTwo";
-            chart1.Series.Add(series);
-            Series series1 = new Series();
-            series1.ChartType = SeriesChartType.FastLine;
-            series1.Name = "Series1";
-            chart1.Series.Add(series1);
-            for (int i = 0; i < StatisticRootOfTwo.Count(); i++)
+            if(meanR!=0)
             {
+                ulong max = 0;
+                decimal Delta;
+                decimal funktionswert;
+                decimal Summe = 0;
+                Poisson poi = new Poisson(Convert.ToDouble(meanR) / 10);
+                Delta = GesamtIntervall / Convert.ToDecimal(AnzahlIntervalle);
+                chart1.Annotations.Clear();
+                chart1.Series.Clear();
+                Series series = new Series();
+                series.ChartType = SeriesChartType.Column;
+                series.Name = "RootOfTwo";
+                chart1.Series.Add(series);
+                Series series1 = new Series();
+                series1.ChartType = SeriesChartType.FastLine;
+                series1.Name = "Poisson";
+                chart1.Series.Add(series1);
+                Series series2 = new Series();
+                series2.ChartType = SeriesChartType.FastLine;
+                series2.Name = "Exponentialverteilung";
+                chart1.Series.Add(series2);
+                for (int i = 0; i < StatisticRootOfTwo.Count(); i++)
+                {
 
-                funktionswert = Convert.ToDecimal(poi.Probability(i))*Convert.ToDecimal(uRootOfTwo)*6400;
-                RootOfTwo.Rows.Add(((i * Delta) + Delta / 2), funktionswert);
-                Console.WriteLine("i={0} poi={1}", i, funktionswert);
-                chart1.Series["RootOfTwo"].Points.AddXY(Convert.ToDecimal(i) * Delta, StatisticRootOfTwo[i]);
-                max = Math.Max(StatisticRootOfTwo[i], max);
-              
+                    funktionswert = Convert.ToDecimal(poi.Probability(i)) * Convert.ToDecimal(uRootOfTwo);
+                    Summe += funktionswert;
+                    chart1.Series["Poisson"].Points.AddXY(((i * Delta) + Delta / 2), funktionswert);
+                    funktionswert = expver((meanR * Delta), (i * Delta) + Delta / 2) * (Convert.ToDecimal(uRootOfTwo) / 100);
+                    chart1.Series["Exponentialverteilung"].Points.AddXY(((i * Delta) + Delta / 2), funktionswert);
+                    chart1.Series["RootOfTwo"].Points.AddXY(Convert.ToDecimal(i) * Delta, StatisticRootOfTwo[i]);
+                    max = Math.Max(StatisticRootOfTwo[i], max);
+
+                }
+                Console.WriteLine(Summe);
+                chart1.ChartAreas[0].AxisY.Maximum = Math.Ceiling(Convert.ToDouble(max * 1.10d));
+                My_Text_Annotation(uRootOfTwo, maxR, minR);
             }
-            chart1.ChartAreas[0].AxisY.Maximum = Math.Ceiling(Convert.ToDouble(max * 1.10d));
-            My_Text_Annotation(uRootOfTwo, maxR, minR);
-            chart1.DataSource = RootOfTwo;
-            chart1.Series["Series1"].XValueMember = "X_Value";
-            chart1.Series["Series1"].YValueMembers = "Y_Value";
-            chart1.Series["Series1"].ChartType = SeriesChartType.FastLine;
-            chart1.ChartAreas[0].AxisY.LabelStyle.Format = "";
-
+           
+ 
+     
         }
-  
+        private decimal expver(decimal lam, decimal xwert)
+        {
+            return Convert.ToDecimal(lam * Convert.ToDecimal(Math.Exp(-Convert.ToDouble(lam * xwert))));
+        }
 
         private void button2_Click(object sender, EventArgs e)
         {
-            ulong max = 0;
-            decimal Delta;
-
-            Delta = GesamtIntervall / Convert.ToDecimal(AnzahlIntervalle);
-            chart1.Annotations.Clear();
-            chart1.Series.Clear();
-            Series series = new Series();
-            series.ChartType = SeriesChartType.Column;
-            series.Name = "Zeta3";
-            chart1.Series.Add(series);
-
-
-            for (int i = 0; i < StatisticZeta3.Count(); i++)
+            if (meanZ != 0)
             {
-                chart1.Series["Zeta3"].Points.AddXY(Convert.ToDecimal(i) * Delta, StatisticZeta3[i]);
-                max = Math.Max(StatisticZeta3[i], max);
-            }
-            chart1.ChartAreas[0].AxisY.Maximum = Math.Ceiling(Convert.ToDouble(max * 1.10d));
+                decimal Summe = 0;
+                ulong max = 0;
+                decimal Delta;
+                decimal funktionswert;
+                Poisson poi = new Poisson(Convert.ToDouble(meanZ) / 10);
+                Delta = GesamtIntervall / Convert.ToDecimal(AnzahlIntervalle);
+                chart1.Annotations.Clear();
+                chart1.Series.Clear();
+                Series series = new Series();
+                series.ChartType = SeriesChartType.Column;
+                series.Name = "Zeta3";
+                chart1.Series.Add(series);
+                Series series1 = new Series();
+                series1.ChartType = SeriesChartType.FastLine;
+                series1.Name = "Poisson";
+                chart1.Series.Add(series1);
+                Series series2 = new Series();
+                series2.ChartType = SeriesChartType.FastLine;
+                series2.Name = "Exponentialverteilung";
+                chart1.Series.Add(series2);
 
-            My_Text_Annotation(uZeta3, maxZ, minZ);
+                for (int i = 0; i < StatisticZeta3.Count(); i++)
+                {
+                    funktionswert = Convert.ToDecimal(poi.Probability(i)) * Convert.ToDecimal(uZeta3);
+                    Summe += funktionswert;
+                    chart1.Series["Poisson"].Points.AddXY(((i * Delta) + Delta / 2), funktionswert);
+                    funktionswert = expver((meanZ * Delta), (i * Delta) + Delta / 2) * (Convert.ToDecimal(uZeta3) / 100);
+                    chart1.Series["Exponentialverteilung"].Points.AddXY(((i * Delta) + Delta / 2), funktionswert);
+                    chart1.Series["Zeta3"].Points.AddXY(Convert.ToDecimal(i) * Delta, StatisticZeta3[i]);
+                    max = Math.Max(StatisticZeta3[i], max);
+                }
+                chart1.ChartAreas[0].AxisY.Maximum = Math.Ceiling(Convert.ToDouble(max * 1.10d));
+
+                My_Text_Annotation(uZeta3, maxZ, minZ);
+            }
 
         }
 
         private void button3_Click(object sender, EventArgs e)
         {
-            decimal Delta;
-            ulong max = 0;
-            Delta = GesamtIntervall / Convert.ToDecimal(AnzahlIntervalle);
-            chart1.Annotations.Clear();
-            chart1.Series.Clear();
-            Series series = new Series();
-            series.ChartType = SeriesChartType.Column;
-            series.Name = "Euler";
-            chart1.Series.Add(series);
-            for (int i = 0; i < StatisticEuler.Count(); i++)
+            if (meanE != 0)
             {
-                chart1.Series["Euler"].Points.AddXY(Convert.ToDecimal(i) * Delta, StatisticEuler[i]);   //Füge Punkte zum Diagramm hinzu
-                max = Math.Max(StatisticEuler[i], max);                     //laufendes Maximum
+
+
+
+                decimal funktionswert = 0;
+                decimal Summe = 0;
+                decimal Delta;
+                ulong max = 0;
+                Poisson poi = new Poisson(Convert.ToDouble(meanE) / 10);
+                Delta = GesamtIntervall / Convert.ToDecimal(AnzahlIntervalle);
+                chart1.Annotations.Clear();
+                chart1.Series.Clear();
+                Series series = new Series();
+                series.ChartType = SeriesChartType.Column;
+                series.Name = "Euler";
+                chart1.Series.Add(series);
+                Series series1 = new Series();
+                series1.ChartType = SeriesChartType.FastLine;
+                series1.Name = "Poisson";
+                chart1.Series.Add(series1);
+                Series series2 = new Series();
+                series2.ChartType = SeriesChartType.FastLine;
+                series2.Name = "Exponentialverteilung";
+                chart1.Series.Add(series2);
+                for (int i = 0; i < StatisticEuler.Count(); i++)
+                {
+                    funktionswert = Convert.ToDecimal(poi.Probability(i)) * Convert.ToDecimal(uEuler);
+                    Summe += funktionswert;
+                    chart1.Series["Poisson"].Points.AddXY(((i * Delta) + Delta / 2), funktionswert);
+                    funktionswert = expver((meanE * Delta), (i * Delta) + Delta / 2) * (Convert.ToDecimal(uEuler) / 100);
+                    chart1.Series["Exponentialverteilung"].Points.AddXY(((i * Delta) + Delta / 2), funktionswert);
+                    chart1.Series["Euler"].Points.AddXY(Convert.ToDecimal(i) * Delta, StatisticEuler[i]);   //Füge Punkte zum Diagramm hinzu
+                    max = Math.Max(StatisticEuler[i], max);                     //laufendes Maximum
+                }
+                chart1.ChartAreas[0].AxisY.Maximum = Math.Ceiling(Convert.ToDouble(max * 1.10d));  //skaliere das Diagram         
+                My_Text_Annotation(uEuler, maxE, minE);    //Text annotation
             }
-            chart1.ChartAreas[0].AxisY.Maximum = Math.Ceiling(Convert.ToDouble(max * 1.10d));  //skaliere das Diagram         
-            My_Text_Annotation(uEuler, maxE, minE);    //Text annotation
         }
 
         private void Anzeige_Click(object sender, EventArgs e)
@@ -352,6 +581,72 @@ namespace Bachelorarbeit_NT
         {
             delete = true;
             this.Dispose();
+        }
+
+        private void DelEuler_Click(object sender, EventArgs e)
+        {
+
+            DeltaNMax(DelMaxE);
+            My_Text_Annotation(uEuler, maxE, minE);
+
+        }
+        private void DeltaNMax(List<decimal> delMax)
+        {
+            chart1.Annotations.Clear();
+            chart1.Series.Clear();   
+            Series smax = new Series();
+            smax.ChartType = SeriesChartType.FastLine;
+            smax.Name = "Max";
+            chart1.Series.Add(smax);
+            for(int i =0;i<delMax.Count();i++)
+            {
+                   chart1.Series["Max"].Points.AddXY(i * 100, delMax[i]);
+            }
+            chart1.ChartAreas[0].AxisY.Maximum = Convert.ToDouble(delMax[delMax.Count-1])*1.10;
+        }
+        private void DeltaNMin(List<decimal> delMin)
+        {
+            chart1.Annotations.Clear();
+            chart1.Series.Clear();
+            Series smin = new Series();
+            smin.ChartType = SeriesChartType.FastLine;
+            smin.Name = "Min";
+            chart1.Series.Add(smin);
+            for (int i = 0; i < delMin.Count(); i++)
+            {
+                chart1.Series["Min"].Points.AddXY(i * 100, delMin[i]);
+            }
+            chart1.ChartAreas[0].AxisY.Maximum = Convert.ToDouble(delMin[0]) * 1.10;
+
+        }
+        private void DelZeta3_Click(object sender, EventArgs e)
+        {
+            DeltaNMax(DelMaxZ);
+            My_Text_Annotation(uZeta3, maxZ, minZ);
+        }
+
+        private void DelRootOfTwo_Click(object sender, EventArgs e)
+        {
+            DeltaNMax(DelMaxR);
+            My_Text_Annotation(uRootOfTwo, maxR, minR);
+        }
+
+        private void bRMin_Click(object sender, EventArgs e)
+        {
+            DeltaNMin(DelMinR);
+            My_Text_Annotation(uRootOfTwo, maxR, minR);
+        }
+
+        private void dMinZ_Click(object sender, EventArgs e)
+        {
+            DeltaNMin(DelMinZ);
+            My_Text_Annotation(uZeta3, maxZ, minZ);
+        }
+
+        private void bEMin_Click(object sender, EventArgs e)
+        {
+            DeltaNMin(DelMinE);
+            My_Text_Annotation(uEuler, maxE, minE);
         }
     }
 }

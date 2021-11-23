@@ -19,7 +19,7 @@ namespace Hier_sind_Testinstanzen
             Channel<int> JobChan = Channel.CreateBounded<int>(1024);
             Channel<int> ResultChan = Channel.CreateBounded<int>(1024);
 
-
+            /*
             var a = new Thread(() => ender(ResultChan));
             a.Start();
             var b = new Thread(() => worker(ResultChan, JobChan, ResultChan));
@@ -39,8 +39,24 @@ namespace Hier_sind_Testinstanzen
             Console.ReadKey();
 
 
+            */
+            List<decimal> hey = new List<decimal>();
+            hey.Add(1);
+            hey.Add(2);
+            hey.Add(3);
+            hey.Add(4);
+            hey.Add(5);
+            hey.Add(6);
+            hey.Add(7);
+            hey.Add(8);
+            hey.Add(9);
+            hey.Add(10);
 
-
+            for (int i = 0; i < hey.Count(); i++)
+            {
+                Console.WriteLine("Hey");
+            }
+            Console.WriteLine(hey[hey.Count-1]);
 
 
             /*
