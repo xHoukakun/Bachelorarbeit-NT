@@ -189,7 +189,7 @@ namespace Bachelorarbeit_NT
             maxR = Maximum;
             decimal tmp = 0.0M;
             ulong Zähle = 0;
-            if(DelMinR.Count()<100)
+            if(DelMinR.Count()<1000)
             {
                 DelMinR.Add(minR);
                 DelMaxR.Add(maxR);
@@ -244,7 +244,7 @@ namespace Bachelorarbeit_NT
             maxE = Maximum;
             decimal tmp = 0.0M;
             ulong Zähle = 0;
-            if (DelMinE.Count() < 100)
+            if (DelMinE.Count() < 1000)
             {
                 DelMinE.Add(minE);
                 DelMaxE.Add(maxE);
@@ -296,7 +296,7 @@ namespace Bachelorarbeit_NT
             maxZ = Maximum;
             decimal tmp=0;
             ulong Zähle = 0;
-            if (DelMinZ.Count() < 100)
+            if (DelMinZ.Count() < 1000)
             {
                 DelMinZ.Add(minZ);
                 DelMaxZ.Add(maxZ);
@@ -348,23 +348,24 @@ namespace Bachelorarbeit_NT
         {
 
         }
-        
-
-        private void button1_Click(object sender, EventArgs e)
+        private void GraphAusgeben(decimal mean, string Name, List<ulong> statistic, ulong N, decimal max1, decimal min1)
         {
-            if(meanR!=0)
+            if (mean != 0)   
             {
-                ulong max = 0;
+
+                decimal max = 0;
                 decimal Delta;
                 decimal funktionswert;
-                decimal Summe = 0;
-                Poisson poi = new Poisson(Convert.ToDouble(meanR) / 10);
                 Delta = GesamtIntervall / Convert.ToDecimal(AnzahlIntervalle);
+                decimal Summe1 = 0;
+                decimal Summe2 = 0;
+
+                Poisson poi = new Poisson(Convert.ToDouble(mean));
                 chart1.Annotations.Clear();
                 chart1.Series.Clear();
                 Series series = new Series();
                 series.ChartType = SeriesChartType.Column;
-                series.Name = "RootOfTwo";
+                series.Name = Name;
                 chart1.Series.Add(series);
                 Series series1 = new Series();
                 series1.ChartType = SeriesChartType.FastLine;
@@ -374,24 +375,41 @@ namespace Bachelorarbeit_NT
                 series2.ChartType = SeriesChartType.FastLine;
                 series2.Name = "Exponentialverteilung";
                 chart1.Series.Add(series2);
-                for (int i = 0; i < StatisticRootOfTwo.Count(); i++)
+
+
+
+
+                for (int i = 0; i < statistic.Count(); i++)
                 {
 
-                    funktionswert = Convert.ToDecimal(poi.Probability(i)) * Convert.ToDecimal(uRootOfTwo);
-                    Summe += funktionswert;
-                    chart1.Series["Poisson"].Points.AddXY(((i * Delta) + Delta / 2), funktionswert);
-                    funktionswert = expver((meanR * Delta), (i * Delta) + Delta / 2) * (Convert.ToDecimal(uRootOfTwo) / 100);
-                    chart1.Series["Exponentialverteilung"].Points.AddXY(((i * Delta) + Delta / 2), funktionswert);
-                    chart1.Series["RootOfTwo"].Points.AddXY(Convert.ToDecimal(i) * Delta, StatisticRootOfTwo[i]);
-                    max = Math.Max(StatisticRootOfTwo[i], max);
+                    funktionswert = funktionswert = Convert.ToDecimal(poi.Probability(i)) * Convert.ToDecimal(N);
+                    Summe1 += funktionswert;
+                    chart1.Series["Poisson"].Points.AddXY(i * Delta, funktionswert);
+                    funktionswert = expver(1 / (mean), Convert.ToDecimal(i)) * Convert.ToDecimal(N);
+
+                    chart1.Series["Exponentialverteilung"].Points.AddXY(Convert.ToDecimal(i) * Delta, funktionswert);
+                    Summe2 += funktionswert;
+                    chart1.Series[Name].Points.AddXY(Convert.ToDecimal(i) * Delta, statistic[i]);
+                    max = Math.Max(statistic[i], max);
+                    
 
                 }
-                Console.WriteLine(Summe);
-                chart1.ChartAreas[0].AxisY.Maximum = Math.Ceiling(Convert.ToDouble(max * 1.10d));
-                My_Text_Annotation(uRootOfTwo, maxR, minR);
+
+                Console.WriteLine("Gesamt Poisson: {0}", Summe1);
+                Console.WriteLine("Gesamt Exponential: {0}", Summe2);
+                chart1.ChartAreas[0].AxisY.Maximum = Math.Ceiling(Convert.ToDouble(max * 1.10m));
+                My_Text_Annotation(N, max1, min1);
             }
-           
- 
+
+
+
+        }
+
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            GraphAusgeben(meanR, "RootOfTwo", StatisticRootOfTwo, uRootOfTwo, maxR, minR);
+
      
         }
         private decimal expver(decimal lam, decimal xwert)
@@ -401,86 +419,14 @@ namespace Bachelorarbeit_NT
 
         private void button2_Click(object sender, EventArgs e)
         {
-            if (meanZ != 0)
-            {
-                decimal Summe = 0;
-                ulong max = 0;
-                decimal Delta;
-                decimal funktionswert;
-                Poisson poi = new Poisson(Convert.ToDouble(meanZ) / 10);
-                Delta = GesamtIntervall / Convert.ToDecimal(AnzahlIntervalle);
-                chart1.Annotations.Clear();
-                chart1.Series.Clear();
-                Series series = new Series();
-                series.ChartType = SeriesChartType.Column;
-                series.Name = "Zeta3";
-                chart1.Series.Add(series);
-                Series series1 = new Series();
-                series1.ChartType = SeriesChartType.FastLine;
-                series1.Name = "Poisson";
-                chart1.Series.Add(series1);
-                Series series2 = new Series();
-                series2.ChartType = SeriesChartType.FastLine;
-                series2.Name = "Exponentialverteilung";
-                chart1.Series.Add(series2);
-
-                for (int i = 0; i < StatisticZeta3.Count(); i++)
-                {
-                    funktionswert = Convert.ToDecimal(poi.Probability(i)) * Convert.ToDecimal(uZeta3);
-                    Summe += funktionswert;
-                    chart1.Series["Poisson"].Points.AddXY(((i * Delta) + Delta / 2), funktionswert);
-                    funktionswert = expver((meanZ * Delta), (i * Delta) + Delta / 2) * (Convert.ToDecimal(uZeta3) / 100);
-                    chart1.Series["Exponentialverteilung"].Points.AddXY(((i * Delta) + Delta / 2), funktionswert);
-                    chart1.Series["Zeta3"].Points.AddXY(Convert.ToDecimal(i) * Delta, StatisticZeta3[i]);
-                    max = Math.Max(StatisticZeta3[i], max);
-                }
-                chart1.ChartAreas[0].AxisY.Maximum = Math.Ceiling(Convert.ToDouble(max * 1.10d));
-
-                My_Text_Annotation(uZeta3, maxZ, minZ);
-            }
-
+            GraphAusgeben(meanZ, "Zeta3",StatisticZeta3, uZeta3, maxZ, minZ);
+          
         }
 
         private void button3_Click(object sender, EventArgs e)
         {
-            if (meanE != 0)
-            {
-
-
-
-                decimal funktionswert = 0;
-                decimal Summe = 0;
-                decimal Delta;
-                ulong max = 0;
-                Poisson poi = new Poisson(Convert.ToDouble(meanE) / 10);
-                Delta = GesamtIntervall / Convert.ToDecimal(AnzahlIntervalle);
-                chart1.Annotations.Clear();
-                chart1.Series.Clear();
-                Series series = new Series();
-                series.ChartType = SeriesChartType.Column;
-                series.Name = "Euler";
-                chart1.Series.Add(series);
-                Series series1 = new Series();
-                series1.ChartType = SeriesChartType.FastLine;
-                series1.Name = "Poisson";
-                chart1.Series.Add(series1);
-                Series series2 = new Series();
-                series2.ChartType = SeriesChartType.FastLine;
-                series2.Name = "Exponentialverteilung";
-                chart1.Series.Add(series2);
-                for (int i = 0; i < StatisticEuler.Count(); i++)
-                {
-                    funktionswert = Convert.ToDecimal(poi.Probability(i)) * Convert.ToDecimal(uEuler);
-                    Summe += funktionswert;
-                    chart1.Series["Poisson"].Points.AddXY(((i * Delta) + Delta / 2), funktionswert);
-                    funktionswert = expver((meanE * Delta), (i * Delta) + Delta / 2) * (Convert.ToDecimal(uEuler) / 100);
-                    chart1.Series["Exponentialverteilung"].Points.AddXY(((i * Delta) + Delta / 2), funktionswert);
-                    chart1.Series["Euler"].Points.AddXY(Convert.ToDecimal(i) * Delta, StatisticEuler[i]);   //Füge Punkte zum Diagramm hinzu
-                    max = Math.Max(StatisticEuler[i], max);                     //laufendes Maximum
-                }
-                chart1.ChartAreas[0].AxisY.Maximum = Math.Ceiling(Convert.ToDouble(max * 1.10d));  //skaliere das Diagram         
-                My_Text_Annotation(uEuler, maxE, minE);    //Text annotation
-            }
+            GraphAusgeben(meanE, "Euler", StatisticEuler, uEuler, maxE, minE);
+           
         }
 
         private void Anzeige_Click(object sender, EventArgs e)
