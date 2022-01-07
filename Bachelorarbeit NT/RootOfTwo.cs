@@ -18,7 +18,7 @@ namespace Bachelorarbeit_NT
         /// <returns>Gibt den Wert der Quadratischen Form zurück</returns>
         public override decimal CalcQuadratic(Coordinate c)
         {
-            return c.x * c.x + alpha * c.y * c.y;
+            return Convert.ToDecimal(Math.PI)/(4*Convert.ToDecimal(Math.Sqrt(Convert.ToDouble(alpha)))) * (c.x * c.x + alpha * c.y * c.y);
         }
         /// <summary>
         /// Gibt das Alpha zurück

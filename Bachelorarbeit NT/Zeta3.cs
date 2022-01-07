@@ -1,4 +1,5 @@
-﻿namespace Bachelorarbeit_NT
+﻿using System;
+namespace Bachelorarbeit_NT
 {
     public class Zeta3 : Term
     {
@@ -12,7 +13,7 @@
 
         public override decimal CalcQuadratic(Coordinate c)
         {
-            return c.x * c.x + alpha * c.y * c.y;
+            return (Convert.ToDecimal(Math.PI) / (4*Convert.ToDecimal(Math.Sqrt(Convert.ToDouble(alpha)))))*(c.x * c.x + alpha * c.y * c.y);
         }
         public override string Alpha(Coordinate c)
         {

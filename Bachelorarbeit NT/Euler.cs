@@ -14,8 +14,8 @@ namespace Bachelorarbeit_NT
 
         public override decimal CalcQuadratic(Coordinate c)
         {
-            return c.x * c.x + alpha * c.y * c.y; //diese Rechnung wird nachher von den Workern aufgerufen.
-        }
+            return (Convert.ToDecimal(Math.PI) /(4* Convert.ToDecimal(Math.Sqrt(Convert.ToDouble(alpha))))) * (c.x * c.x + alpha * c.y * c.y); //diese Rechnung wird nachher von den Workern aufgerufen.
+        }                                                                                                                                   //Es wird durch sqrt(a)/pi geteilt.
         public override string Alpha(Coordinate c)
         {
             return "Euler";

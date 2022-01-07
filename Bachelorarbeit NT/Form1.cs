@@ -360,17 +360,17 @@ namespace Bachelorarbeit_NT
                 decimal Summe1 = 0;
                 decimal Summe2 = 0;
 
-                Poisson poi = new Poisson(Convert.ToDouble(mean));
+                //Poisson poi = new Poisson(Convert.ToDouble(mean));
                 chart1.Annotations.Clear();
                 chart1.Series.Clear();
                 Series series = new Series();
                 series.ChartType = SeriesChartType.Column;
                 series.Name = Name;
                 chart1.Series.Add(series);
-                Series series1 = new Series();
-                series1.ChartType = SeriesChartType.FastLine;
-                series1.Name = "Poisson";
-                chart1.Series.Add(series1);
+                //Series series1 = new Series();
+                //series1.ChartType = SeriesChartType.FastLine;
+                //series1.Name = "Poisson";
+                //chart1.Series.Add(series1);
                 Series series2 = new Series();
                 series2.ChartType = SeriesChartType.FastLine;
                 series2.Name = "Exponentialverteilung";
@@ -382,9 +382,9 @@ namespace Bachelorarbeit_NT
                 for (int i = 0; i < statistic.Count(); i++)
                 {
 
-                    funktionswert = funktionswert = Convert.ToDecimal(poi.Probability(i)) * Convert.ToDecimal(N);
-                    Summe1 += funktionswert;
-                    chart1.Series["Poisson"].Points.AddXY(i * Delta, funktionswert);
+                    //funktionswert = funktionswert = Convert.ToDecimal(poi.Probability(i)) * Convert.ToDecimal(N);
+                    //Summe1 += funktionswert;
+                    //chart1.Series["Poisson"].Points.AddXY(i * Delta, funktionswert);
                     funktionswert = expver(1 / (mean), Convert.ToDecimal(i)) * Convert.ToDecimal(N);
 
                     chart1.Series["Exponentialverteilung"].Points.AddXY(Convert.ToDecimal(i) * Delta, funktionswert);
@@ -395,7 +395,7 @@ namespace Bachelorarbeit_NT
 
                 }
 
-                Console.WriteLine("Gesamt Poisson: {0}", Summe1);
+                //Console.WriteLine("Gesamt Poisson: {0}", Summe1);
                 Console.WriteLine("Gesamt Exponential: {0}", Summe2);
                 chart1.ChartAreas[0].AxisY.Maximum = Math.Ceiling(Convert.ToDouble(max * 1.10m));
                 My_Text_Annotation(N, max1, min1);
@@ -525,74 +525,94 @@ namespace Bachelorarbeit_NT
 
         private void bDelete_Click(object sender, EventArgs e)
         {
-            delete = true;
+            delete = true;          //Das wird für das Beenden des Porgramms benötigt
             this.Dispose();
         }
 
         private void DelEuler_Click(object sender, EventArgs e)
-        {
-
-            DeltaNMax(DelMaxE);
-            My_Text_Annotation(uEuler, maxE, minE);
-
-        }
+        {if (DelMaxE.Count != 0)
+            {
+                DeltaNMax(DelMaxE);
+                My_Text_Annotation(uEuler, maxE, minE);
+            }        }
         private void DeltaNMax(List<decimal> delMax)
         {
+            if (delMax.Count != 0)
+            { 
+
             chart1.Annotations.Clear();
-            chart1.Series.Clear();   
+            chart1.Series.Clear();
             Series smax = new Series();
             smax.ChartType = SeriesChartType.FastLine;
             smax.Name = "Max";
             chart1.Series.Add(smax);
-            for(int i =0;i<delMax.Count();i++)
+            for (int i = 0; i < delMax.Count(); i++)
             {
-                   chart1.Series["Max"].Points.AddXY(i * 100, delMax[i]);
+                chart1.Series["Max"].Points.AddXY(i * 100, delMax[i]);
             }
-            chart1.ChartAreas[0].AxisY.Maximum = Convert.ToDouble(delMax[delMax.Count-1])*1.10;
+            chart1.ChartAreas[0].AxisY.Maximum = Convert.ToDouble(delMax[delMax.Count - 1]) * 1.10;
+        }
         }
         private void DeltaNMin(List<decimal> delMin)
         {
-            chart1.Annotations.Clear();
-            chart1.Series.Clear();
-            Series smin = new Series();
-            smin.ChartType = SeriesChartType.FastLine;
-            smin.Name = "Min";
-            chart1.Series.Add(smin);
-            for (int i = 0; i < delMin.Count(); i++)
+            if (delMin.Count != 0)
             {
-                chart1.Series["Min"].Points.AddXY(i * 100, delMin[i]);
+                chart1.Annotations.Clear();
+                chart1.Series.Clear();
+                Series smin = new Series();
+                smin.ChartType = SeriesChartType.FastLine;
+                smin.Name = "Min";
+                chart1.Series.Add(smin);
+                for (int i = 0; i < delMin.Count(); i++)
+                {
+                    chart1.Series["Min"].Points.AddXY(i * 100, delMin[i]);
+                }
+                chart1.ChartAreas[0].AxisY.Maximum = Convert.ToDouble(delMin[0]) * 1.10;
             }
-            chart1.ChartAreas[0].AxisY.Maximum = Convert.ToDouble(delMin[0]) * 1.10;
 
         }
         private void DelZeta3_Click(object sender, EventArgs e)
         {
-            DeltaNMax(DelMaxZ);
-            My_Text_Annotation(uZeta3, maxZ, minZ);
+            if (DelMaxZ.Count != 0)
+            {
+                DeltaNMax(DelMaxZ);
+                My_Text_Annotation(uZeta3, maxZ, minZ);
+            }
         }
 
         private void DelRootOfTwo_Click(object sender, EventArgs e)
         {
-            DeltaNMax(DelMaxR);
-            My_Text_Annotation(uRootOfTwo, maxR, minR);
+            if (DelMaxR.Count != 0)
+            {
+                DeltaNMax(DelMaxR);
+                My_Text_Annotation(uRootOfTwo, maxR, minR);
+            }
         }
 
         private void bRMin_Click(object sender, EventArgs e)
         {
-            DeltaNMin(DelMinR);
-            My_Text_Annotation(uRootOfTwo, maxR, minR);
+            if (DelMinR.Count != 0)
+            {
+                DeltaNMin(DelMinR);
+                My_Text_Annotation(uRootOfTwo, maxR, minR);
+            }
         }
 
         private void dMinZ_Click(object sender, EventArgs e)
         {
-            DeltaNMin(DelMinZ);
-            My_Text_Annotation(uZeta3, maxZ, minZ);
+            if (DelMinZ.Count != 0)
+            {
+                DeltaNMin(DelMinZ);
+                My_Text_Annotation(uZeta3, maxZ, minZ);
+            }
         }
 
         private void bEMin_Click(object sender, EventArgs e)
-        {
-            DeltaNMin(DelMinE);
-            My_Text_Annotation(uEuler, maxE, minE);
+        {if (DelMinE.Count != 0)
+            {
+                DeltaNMin(DelMinE);
+                My_Text_Annotation(uEuler, maxE, minE);
+            }
         }
     }
 }
