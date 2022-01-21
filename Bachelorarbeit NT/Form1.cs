@@ -460,23 +460,29 @@ namespace Bachelorarbeit_NT
         /// <param name="e"></param>
         private void SaveButton_Click(object sender, EventArgs e)
         {
-            Stream myStream;
-            SaveFileDialog saveFileDialog1 = new SaveFileDialog();
+            
+            
+                Stream myStream;
+                SaveFileDialog saveFileDialog1 = new SaveFileDialog();
 
-            saveFileDialog1.Filter = "txt files (*.txt)|*.txt|PNG files (*.png)|*.png|All files (*.*)|*.*";
-            saveFileDialog1.FilterIndex = 2;
-            saveFileDialog1.RestoreDirectory = true;
+                saveFileDialog1.Filter = "txt files (*.txt)|*.txt|PNG files (*.png)|*.png|All files (*.*)|*.*";
+                saveFileDialog1.FilterIndex = 2;
+                saveFileDialog1.RestoreDirectory = true;
 
-            if (saveFileDialog1.ShowDialog() == DialogResult.OK)
-            {
-                if ((myStream = saveFileDialog1.OpenFile()) != null)
+            
+                if (saveFileDialog1.ShowDialog() == DialogResult.OK)
                 {
-                    
-                    chart1.SaveImage(myStream, ChartImageFormat.Png); //speichere die Chart als png
-                    myStream.Close();  
+                    if ((myStream = saveFileDialog1.OpenFile()) != null)
+                    {
+
+                        chart1.SaveImage(myStream, ChartImageFormat.Png); //speichere die Chart als png
+                        myStream.Close();
+                    }
                 }
-            }
+            
+          
         }
+
         /// <summary>
         ///Hier wird nur Der Text an die Grafik geheftet 
         /// </summary>
@@ -534,7 +540,8 @@ namespace Bachelorarbeit_NT
             {
                 DeltaNMax(DelMaxE);
                 My_Text_Annotation(uEuler, maxE, minE);
-            }        }
+            }
+        }
         private void DeltaNMax(List<decimal> delMax)
         {
             if (delMax.Count != 0)

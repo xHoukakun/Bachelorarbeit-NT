@@ -335,7 +335,7 @@ namespace Bachelorarbeit_NT
 
 
                     }
-                    if (Ergebnisse.Count == 30_000_000)   //Da man bei 10^x ein speicher problem bekommt halte ich 20_000_000  Werte in einer Liste
+                    if (Ergebnisse.Count == 30_000_000)   //Da man bei 10^x ein speicher problem bekommt halte ich 30_000_000  Werte in einer Liste
                     {
                         var gc2 = new Thread(() => GC.Collect());  //lasse den Garbage Collecter laufen um Arbeitsspeicher zu sparen.
                         gc2.Start();
@@ -499,108 +499,10 @@ namespace Bachelorarbeit_NT
 
 
         }
-        /// <summary>
-        /// Absteigende Implementierung von Insertion Sort
-        /// </summary>
-        /// <param name="insert">Was zu sortieren ist</param>
-        /// <param name="Liste">Die Liste in die hineinsortiert wird</param>
-        /// <returns></returns>
-        public static List<decimal> InsertionSort(decimal insert, List<decimal> Liste) //InsertionSort Die Liste ist absteigend Sortiert;
-        {
-            for (int i = 0; i < Liste.Count(); i++)
-            {
-                if (insert > Liste[i])
-                {
-                    while (i < Liste.Count())
-                    {
-                        decimal temp = Liste[i];
-                        Liste[i] = insert;
-                        insert = temp;
-                        i++;
-                    }
-
-
-                }
-
-            }
-            Liste.Add(insert);
-            return Liste;
-        }
-
-
-        /// <summary>
-        /// Hier werden die Tables erst gedroppt und dann neu erstellt. Somit fängt die Berechnung von neu an. Man hat keine Inkonsistenten Daten
-        /// </summary>
-        /// <param name="connect">Connection String für die database</param>
-        public void Create_Database(string connect)
-        {
-            using (var connection = new SQLiteConnection(connect))
-            {
-                connection.Open();
 
 
 
-
-
-
-
-
-                var cmd = new SQLiteCommand(connection);
-                Console.WriteLine("drop table");
-                cmd.CommandText = "DROP TABLE IF EXISTS Wurzel2";
-                cmd.ExecuteNonQuery();
-                cmd.CommandText = "DROP TABLE IF EXISTS Eulersche_Zahl";
-                cmd.ExecuteNonQuery();
-                cmd.CommandText = "DROP TABLE IF EXISTS Zeta3";
-                cmd.ExecuteNonQuery();
-                Console.WriteLine("Dropped Tables");
-                //SQL befehle für das ERstellen der Datenbank
-                //Create Table der PK ist das Ergebnis also Value mit hoher genauigkeit. und ohne RowID ( Die Datenbank soll möglichst klein gehalten werden)
-                cmd.CommandText = @"CREATE TABLE Wurzel2 (
-
-                 
-
-                    Value  Decimal NOT NULL UNIQUE,
-                    PRIMARY KEY(Value)
-                    )WITHOUT ROWID;";
-                cmd.ExecuteNonQuery();
-                cmd.CommandText = @"CREATE TABLE Eulersche_Zahl (
-
-                    
-
-                    Value Decimal NOT NULL UNIQUE,
-                    PRIMARY KEY(Value)
-                )WITHOUT ROWID;";
-                cmd.ExecuteNonQuery();
-                cmd.CommandText = @"CREATE TABLE Zeta3 (
-
-                    
-
-                    Value Decimal NOT NULL UNIQUE,
-                    PRIMARY KEY(Value)
-                )WITHOUT ROWID;";
-                cmd.ExecuteNonQuery();
-                //Hier werden nun Indexe auf die Values gesetzt damit man einfacher drauf zugreifen kann ( Sortierung)
-                //Dies hat einen sehr großen Einfluss auf die Laufzeit des Programmes. 
-                //Da ich nicht weiß in welcher Reihenfolge die Werte rein geschrieben werden 
-                //Sorge ich nachher mit Select befehl das die sehr schnell aufsteigend sortiert werden
-                cmd.CommandText = @"CREATE INDEX Sortiert_Euler ON Eulersche_Zahl(
-                     Value ASC
-                     )";
-                cmd.ExecuteNonQuery();
-                cmd.CommandText = @"CREATE INDEX Sortiert_Wurzel2 ON Wurzel2(
-                     Value ASC
-                     )";
-                cmd.ExecuteNonQuery();
-                cmd.CommandText = @"CREATE INDEX Sortiert_Zeta3 ON Zeta3 (
-
-                     Value ASC
-                 )";
-                cmd.ExecuteNonQuery();
-                connection.Close();
-
-            }
-        }
+        
 
         /// <summary>
         /// Der Controller wird darauf verwendet das falls ein Cancel Requested wird alles noch gesaved wird.
@@ -804,77 +706,7 @@ namespace Bachelorarbeit_NT
             Zähler[i]++; //falls x in keinem Intervall lag heißt es, dass x zu groß war und deswegen rausfällt
 
 
-        }
-        /// <summary>
-        /// implementiert Eine Art Mergesort in threads. Es werden 2 Teillisten erstellt die gleichzeitig sortiert werden.
-        /// </summary>
-        /// <param name="Liste">die zu sortierende Liste</param>
-        /// <returns></returns>
-        public static List<decimal> MergeSort(List<decimal> Liste)
-        {
-            List<decimal> liste1 = new List<decimal>();
-            List<decimal> liste2 = new List<decimal>();
-            int i = 0;
-            int Count = Liste.Count();
-            while (i < Convert.ToInt32(Math.Floor(Convert.ToDecimal(Count / 2))))
-            {
-                liste1.Add(Liste[0]);
-                Liste.RemoveAt(0);
-                i++;
-            }
-            while (i < Count)
-            {
-                liste2.Add(Liste[0]);
-                Liste.RemoveAt(0);
-                i++;
-            }
-            var Sort1 = new Thread(() => liste1.Sort());
-            Sort1.Start();
-            var Sort2 = new Thread(() => liste2.Sort());
-            Sort2.Start();
-            Sort1.Join();
-            Sort2.Join();
-            for (int j = 0; j < Count; j++)
-            {
-                if (liste1[0] < liste2[0])
-                {
-                    Liste.Add(liste1[0]);
-                    liste1.RemoveAt(0);
-                    if (liste1.Count() == 0)
-                    {
-                        while (liste2.Count() != 0)
-                        {
-                            j++;
-                            Liste.Add(liste2[0]);
-
-                            liste2.RemoveAt(0);
-                        }
-
-
-                    }
-                }
-                else if (liste1[0] >= liste2[0])
-                {
-                    Liste.Add(liste2[0]);
-
-                    liste2.RemoveAt(0);
-                    if (liste2.Count() == 0)
-                    {
-                        while (liste1.Count() != 0)
-                        {
-                            j++;
-                            Liste.Add(liste1[0]);
-
-                            liste1.RemoveAt(0);
-                        }
-                    }
-                }
-            }
-            liste1.Clear();
-            liste2.Clear();
-
-            return Liste;
-        }
+        }        
     }
 }
 
