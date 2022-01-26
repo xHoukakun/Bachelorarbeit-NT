@@ -17,8 +17,10 @@ namespace Bachelorarbeit_NT
         protected override void Dispose(bool disposing)
         {
             string[] del = { "Zeta3", "Euler", "RootOfTwo" };
-            ctsrc.Cancel();//Der Cancelation Token wird gesetzt damit werden die Threads beendet            
-            while(!saved)  //solange kein Sicherers Beenden möglich ist passiert erstmal nichts
+            ctsrc.Cancel();//Der Cancelation Token wird gesetzt damit werden die Threads beendet
+            this.Opacity = 0;
+            this.ShowInTaskbar = false;
+            while (!saved)  //solange kein Sicherers Beenden möglich ist passiert erstmal nichts
             {
                 Thread.Sleep(1000);
                 

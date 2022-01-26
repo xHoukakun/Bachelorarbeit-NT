@@ -375,7 +375,8 @@ namespace Bachelorarbeit_NT
                 series2.ChartType = SeriesChartType.FastLine;
                 series2.Name = "Exponentialverteilung";
                 chart1.Series.Add(series2);
-
+                chart1.ChartAreas[0].AxisY.Title = "Häufigkeit";
+                chart1.ChartAreas[0].AxisX.Title = "Größe des Abstands";
 
 
 
@@ -558,7 +559,9 @@ namespace Bachelorarbeit_NT
                 chart1.Series["Max"].Points.AddXY(i * 100, delMax[i]);
             }
             chart1.ChartAreas[0].AxisY.Maximum = Convert.ToDouble(delMax[delMax.Count - 1]) * 1.10;
-        }
+                chart1.ChartAreas[0].AxisY.Title = "Größe des Abstands";
+                chart1.ChartAreas[0].AxisX.Title = "N";
+            }
         }
         private void DeltaNMin(List<decimal> delMin)
         {
@@ -567,7 +570,7 @@ namespace Bachelorarbeit_NT
                 chart1.Annotations.Clear();
                 chart1.Series.Clear();
                 Series smin = new Series();
-                smin.ChartType = SeriesChartType.FastLine;
+                smin.ChartType = SeriesChartType.FastLine;              
                 smin.Name = "Min";
                 chart1.Series.Add(smin);
                 for (int i = 0; i < delMin.Count(); i++)
@@ -575,6 +578,8 @@ namespace Bachelorarbeit_NT
                     chart1.Series["Min"].Points.AddXY(i * 100, delMin[i]);
                 }
                 chart1.ChartAreas[0].AxisY.Maximum = Convert.ToDouble(delMin[0]) * 1.10;
+                chart1.ChartAreas[0].AxisY.Title = "Größe des Abstands";
+                chart1.ChartAreas[0].AxisX.Title = "N";
             }
 
         }
