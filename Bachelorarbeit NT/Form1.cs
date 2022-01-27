@@ -64,6 +64,7 @@ namespace Bachelorarbeit_NT
             Delta = GesamtIntervall / Convert.ToDecimal(AnzahlIntervalle);
 
         }
+
         private void DelLesen(StringBuilder sbpath) //MethodeZumAuslesenDerAbstandsfunktion
         {
             var sbEulerMin = new StringBuilder(Convert.ToString(sbpath));           
@@ -663,6 +664,7 @@ namespace Bachelorarbeit_NT
             sZeta3.Start();
             var sLesen =new Thread(()=> DelLesen(sb));
             sLesen.Start();
+
         }
         public async void Statistic(string Typ, StringBuilder sbpath)
         {
@@ -692,7 +694,29 @@ namespace Bachelorarbeit_NT
                     Anzahl.Add(Convert.ToUInt64(reader.ReadLine()));
                     reader.Close();
 
+                    switch (Typ)
+                    {
+                        case "RootOfTwo":
+                            Liste_RootOfTwo(Anzahl, Minimum, Maximum);
 
+                            break;
+
+
+                        case "Zeta3":
+
+                            Liste_Zeta3(Anzahl, Minimum, Maximum);
+
+
+
+                            break;
+                        case "Euler":
+                            Liste_Euler(Anzahl, Minimum, Maximum);
+
+
+
+                            break;
+                        default: throw new ArgumentException(); //Falls es ein s gibt welches zu nichts passt
+                    }
                 }
             }
             else //Falls diese Dateien nicht existieren gibt es auch keine Statistik. Diese muss erstellt werden.
@@ -705,29 +729,7 @@ namespace Bachelorarbeit_NT
             }
 
 
-            switch (Typ)
-            {
-                case "RootOfTwo":
-                    Liste_RootOfTwo(Anzahl, Minimum, Maximum);
-
-                    break;
-
-
-                case "Zeta3":
-
-                    Liste_Zeta3(Anzahl, Minimum, Maximum);
-
-
-
-                    break;
-                case "Euler":
-                    Liste_Euler(Anzahl, Minimum, Maximum);
-
-
-
-                    break;
-                default: throw new ArgumentException(); //Falls es ein s gibt welches zu nichts passt
-            }
+            
 
 
 
