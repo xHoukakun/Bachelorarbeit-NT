@@ -8,6 +8,7 @@ using System.Windows.Forms;
 using System.Windows.Forms.DataVisualization.Charting;
 using System.Data;
 using MathNet.Numerics.Distributions;
+using System.Text;
 
 namespace Bachelorarbeit_NT
 {
@@ -624,6 +625,61 @@ namespace Bachelorarbeit_NT
             {
                 DeltaNMin(DelMinE);
                 My_Text_Annotation(uEuler, maxE, minE);
+            }
+        }
+
+        private void Copy_Click(object sender, EventArgs e)
+        {
+            FolderBrowserDialog browser = new FolderBrowserDialog();
+            string tempPath = "";
+
+            if (browser.ShowDialog() == DialogResult.OK)
+            {
+                tempPath = browser.SelectedPath;
+            }
+            var dest = new StringBuilder(tempPath);
+            dest.Append("\\");
+            OwnCopy(dest);
+            
+        }
+        private void OwnCopy(StringBuilder dest)
+        {
+            string[] st = { "Zeta3", "Euler", "RootOfTwo" };
+            string sdest = Convert.ToString(dest);
+            foreach (string f in st)
+            {
+                if (File.Exists(f + "Statistik.txt"))
+                {
+                    var tst = new Thread(() => File.Copy(f + "Statistik.txt", sdest + f + "Statistik.txt", true));
+                    tst.Start();
+                    //File.Copy(f + "Statistik.tx", sdest + f + "Statistik.txt", true);
+                }
+                if (File.Exists(f + "Abstände.txt"))
+                {
+                    var tst2 = new Thread(() => File.Copy(f + "Abstände.txt", sdest + f + "Abstände.txt", true));
+                    tst2.Start();
+                }
+                if (File.Exists(f + "Min.txt"))
+                {
+                    var tst3 = new Thread(() => File.Copy(f + "Min.txt", sdest + f + "Min.txt", true));
+                    tst3.Start();
+                }
+                if (File.Exists(f + "Max.txt"))
+                {
+                    var tst4 = new Thread(() => File.Copy(f + "Max.txt", sdest + f + "Max.txt", true));
+                    tst4.Start();
+                }
+            }
+            if (File.Exists("Merken.txt"))
+            {
+             
+                var tst5 = new Thread(() => File.Copy("Merken.txt", sdest + "Merken.txt", true));
+                tst5.Start();
+            }
+            if (File.Exists("Fertig.txt"))
+            {              
+                var tst6 = new Thread(() => File.Copy("Fertig.txt", sdest + "Fertig.txt", true));
+                tst6.Start();
             }
         }
     }
