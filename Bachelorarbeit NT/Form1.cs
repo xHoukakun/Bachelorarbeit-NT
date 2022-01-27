@@ -637,9 +637,14 @@ namespace Bachelorarbeit_NT
             {
                 tempPath = browser.SelectedPath;
             }
-            var dest = new StringBuilder(tempPath);
-            dest.Append("\\");
-            OwnCopy(dest);
+            if(tempPath.Length!=0)
+            {
+               
+                var dest = new StringBuilder(tempPath);
+                dest.Append("\\");
+                OwnCopy(dest);
+            }
+
             
         }
         private void OwnCopy(StringBuilder dest)
