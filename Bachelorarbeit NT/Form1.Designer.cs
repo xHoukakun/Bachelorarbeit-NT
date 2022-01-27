@@ -16,45 +16,12 @@ namespace Bachelorarbeit_NT
         /// <param name="disposing">True, wenn verwaltete Ressourcen gelöscht werden sollen; andernfalls False.</param>
         protected override void Dispose(bool disposing)
         {
-            string[] del = { "Zeta3", "Euler", "RootOfTwo" };
-            ctsrc.Cancel();//Der Cancelation Token wird gesetzt damit werden die Threads beendet            
-            while(!saved)  //solange kein Sicherers Beenden möglich ist passiert erstmal nichts
-            {
-                Thread.Sleep(1000);
-                
-            }
-            speichern();
-            if (delete) //Wenn zusätzlich alles Gelöscht werden soll wird das hier ausgeführt
-            {
-                
-                if (File.Exists("Merken.txt"))
-                {
-                    File.Delete("Merken.txt");
-                }
-                if(File.Exists("Fertig.txt"))
-                {
-                    File.Delete("Fertig.txt");
-                }
-                foreach (string f in del)  
-                {
-                    if (File.Exists(f + "Statistik.txt"))
-                    {
-                        File.Delete(f + "Statistik.txt");
-                    }
-                    if (File.Exists(f + "Abstände.txt"))
-                    {
-                        File.Delete(f + "Abstände.txt");
-                    }
-                    if (File.Exists(f + "Min.txt"))
-                    {
-                        File.Delete(f + "Min.txt");
-                    }
-                    if (File.Exists(f + "Max.txt"))
-                    {
-                        File.Delete(f + "Max.txt");
-                    }
-                }
-            }
+           
+            ctsrc.Cancel();//Der Cancelation Token wird gesetzt damit werden die Threads beendet
+            this.Opacity = 0;
+            this.ShowInTaskbar = false;
+           
+           
             if (disposing && (components != null)) //Code von Visual Studio
             {
                 components.Dispose();
@@ -62,45 +29,7 @@ namespace Bachelorarbeit_NT
             Console.WriteLine("Sicher beendet");
             base.Dispose(disposing);
         }
-        private void speichern()
-        {
-            StreamWriter sw1 = new StreamWriter("EulerMin" + ".txt");
-            for (int i = 0; i < DelMinE.Count; i++)
-            {
-                sw1.WriteLine(DelMinE[i]);
-            }
-            sw1.Close();
-            StreamWriter sw2 = new StreamWriter("EulerMax" + ".txt");
-            for(int i=0;i<DelMaxE.Count;i++)
-            {
-                sw2.WriteLine(DelMaxE[i]);
-            }
-            sw2.Close();
-            StreamWriter sw3 = new StreamWriter("Zeta3Max" + ".txt");
-            for(int i=0;i<DelMaxZ.Count;i++)
-            {
-                sw3.WriteLine(DelMaxZ[i]);
-            }
-            sw3.Close();
-            StreamWriter sw4 = new StreamWriter("Zeta3Min" + ".txt");
-            for (int i = 0; i < DelMinZ.Count; i++)
-            {
-                sw4.WriteLine(DelMinZ[i]);
-            }
-            sw4.Close();
-            StreamWriter sw5 = new StreamWriter("RootOfTwoMin" + ".txt");
-            for(int i = 0;i< DelMinR.Count; i++)
-            {
-                sw5.WriteLine(DelMinR[i]);
-            }
-            sw5.Close();
-            StreamWriter sw6 = new StreamWriter("RootOfTwoMax" + ".txt");
-            for (int i = 0; i < DelMaxR.Count; i++)
-            {
-                sw6.WriteLine(DelMaxR[i]);
-            }
-            sw6.Close();
-        }
+       
         #region Vom Windows Form-Designer generierter Code
 
         /// <summary>
@@ -109,16 +38,15 @@ namespace Bachelorarbeit_NT
         /// </summary>
         private void InitializeComponent()
         {
-            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea1 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
-            System.Windows.Forms.DataVisualization.Charting.Legend legend1 = new System.Windows.Forms.DataVisualization.Charting.Legend();
-            System.Windows.Forms.DataVisualization.Charting.Series series1 = new System.Windows.Forms.DataVisualization.Charting.Series();
+            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea2 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
+            System.Windows.Forms.DataVisualization.Charting.Legend legend2 = new System.Windows.Forms.DataVisualization.Charting.Legend();
+            System.Windows.Forms.DataVisualization.Charting.Series series2 = new System.Windows.Forms.DataVisualization.Charting.Series();
             this.chart1 = new System.Windows.Forms.DataVisualization.Charting.Chart();
             this.button1 = new System.Windows.Forms.Button();
             this.button2 = new System.Windows.Forms.Button();
             this.button3 = new System.Windows.Forms.Button();
             this.saveFileDialog1 = new System.Windows.Forms.SaveFileDialog();
             this.SaveButton = new System.Windows.Forms.Button();
-            this.bDelete = new System.Windows.Forms.Button();
             this.DelRootOfTwo = new System.Windows.Forms.Button();
             this.DelZeta3 = new System.Windows.Forms.Button();
             this.DelEuler = new System.Windows.Forms.Button();
@@ -128,21 +56,23 @@ namespace Bachelorarbeit_NT
             this.bRMin = new System.Windows.Forms.Button();
             this.dMinZ = new System.Windows.Forms.Button();
             this.bEMin = new System.Windows.Forms.Button();
+            this.Verzeichnis = new System.Windows.Forms.Button();
+            this.folderBrowserDialog1 = new System.Windows.Forms.FolderBrowserDialog();
             ((System.ComponentModel.ISupportInitialize)(this.chart1)).BeginInit();
             this.SuspendLayout();
             // 
             // chart1
             // 
-            chartArea1.Name = "ChartArea1";
-            this.chart1.ChartAreas.Add(chartArea1);
-            legend1.Name = "Legend1";
-            this.chart1.Legends.Add(legend1);
+            chartArea2.Name = "ChartArea1";
+            this.chart1.ChartAreas.Add(chartArea2);
+            legend2.Name = "Legend1";
+            this.chart1.Legends.Add(legend2);
             this.chart1.Location = new System.Drawing.Point(12, 12);
             this.chart1.Name = "chart1";
-            series1.ChartArea = "ChartArea1";
-            series1.Legend = "Legend1";
-            series1.Name = "Series1";
-            this.chart1.Series.Add(series1);
+            series2.ChartArea = "ChartArea1";
+            series2.Legend = "Legend1";
+            series2.Name = "Series1";
+            this.chart1.Series.Add(series2);
             this.chart1.Size = new System.Drawing.Size(1279, 573);
             this.chart1.TabIndex = 0;
             this.chart1.Text = "chart1";
@@ -194,16 +124,6 @@ namespace Bachelorarbeit_NT
             this.SaveButton.Text = "SaveAsImage";
             this.SaveButton.UseVisualStyleBackColor = true;
             this.SaveButton.Click += new System.EventHandler(this.SaveButton_Click);
-            // 
-            // bDelete
-            // 
-            this.bDelete.Location = new System.Drawing.Point(1082, 590);
-            this.bDelete.Name = "bDelete";
-            this.bDelete.Size = new System.Drawing.Size(75, 23);
-            this.bDelete.TabIndex = 11;
-            this.bDelete.Text = "DeleteAll";
-            this.bDelete.UseVisualStyleBackColor = true;
-            this.bDelete.Click += new System.EventHandler(this.bDelete_Click);
             // 
             // DelRootOfTwo
             // 
@@ -292,11 +212,22 @@ namespace Bachelorarbeit_NT
             this.bEMin.UseVisualStyleBackColor = true;
             this.bEMin.Click += new System.EventHandler(this.bEMin_Click);
             // 
+            // Verzeichnis
+            // 
+            this.Verzeichnis.Location = new System.Drawing.Point(1095, 599);
+            this.Verzeichnis.Name = "Verzeichnis";
+            this.Verzeichnis.Size = new System.Drawing.Size(166, 23);
+            this.Verzeichnis.TabIndex = 21;
+            this.Verzeichnis.Text = "Verzeichnis auswählen";
+            this.Verzeichnis.UseVisualStyleBackColor = true;
+            this.Verzeichnis.Click += new System.EventHandler(this.Verzeichnis_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1386, 712);
+            this.Controls.Add(this.Verzeichnis);
             this.Controls.Add(this.bEMin);
             this.Controls.Add(this.dMinZ);
             this.Controls.Add(this.bRMin);
@@ -306,7 +237,6 @@ namespace Bachelorarbeit_NT
             this.Controls.Add(this.DelEuler);
             this.Controls.Add(this.DelZeta3);
             this.Controls.Add(this.DelRootOfTwo);
-            this.Controls.Add(this.bDelete);
             this.Controls.Add(this.SaveButton);
             this.Controls.Add(this.button3);
             this.Controls.Add(this.button2);
@@ -329,7 +259,6 @@ namespace Bachelorarbeit_NT
         private System.Windows.Forms.Button button1;
         private System.Windows.Forms.SaveFileDialog saveFileDialog1;
         private System.Windows.Forms.Button SaveButton;
-        private System.Windows.Forms.Button bDelete;
         private System.Windows.Forms.Button DelRootOfTwo;
         private System.Windows.Forms.Button DelZeta3;
         private System.Windows.Forms.Button DelEuler;
@@ -339,6 +268,8 @@ namespace Bachelorarbeit_NT
         private System.Windows.Forms.Button bRMin;
         private System.Windows.Forms.Button dMinZ;
         private System.Windows.Forms.Button bEMin;
+        private System.Windows.Forms.Button Verzeichnis;
+        private System.Windows.Forms.FolderBrowserDialog folderBrowserDialog1;
     }
 }
 

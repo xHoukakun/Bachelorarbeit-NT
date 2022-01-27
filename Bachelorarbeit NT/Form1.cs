@@ -8,11 +8,12 @@ using System.Windows.Forms;
 using System.Windows.Forms.DataVisualization.Charting;
 using System.Data;
 using MathNet.Numerics.Distributions;
+using System.Text;
 
 namespace Bachelorarbeit_NT
 {
     public partial class Form1 : Form
-    {       
+    {
         static int cpus = 2; //Anzahl cpus
         static double n1 = 10 * 10e17;  //Anzahl der Werte die berechnet werden sollen
         static ulong n = Convert.ToUInt64(n1);
@@ -24,7 +25,7 @@ namespace Bachelorarbeit_NT
         static List<ulong> StatisticEuler = new List<ulong>();  //Statistik für Euler 
         static List<ulong> StatisticZeta3 = new List<ulong>();  //Statistik für Zeta3
         static bool Wurzel2aufgerufen = false;                  //Wenn das erste mal die Statistik aufgerufen wurde
-        static bool Euleraufgerufen = false;                    
+        static bool Euleraufgerufen = false;
         static bool Zeta3aufgerufen = false;
         static ulong uZeta3;                            //wie viele Zeta3 Werte gibt es
         static ulong uRootOfTwo;
@@ -41,15 +42,15 @@ namespace Bachelorarbeit_NT
         static List<decimal> propZ = new List<decimal>();
         static decimal meanE;
         static decimal meanR;
-        static decimal Delta;              
-        private bool delete = false;  //Falls die Dateien Gelöscht werden sollen
+        static decimal Delta;
         static List<decimal> DelMinR = new List<decimal>();
         static List<decimal> DelMaxR = new List<decimal>();
         static List<decimal> DelMinE = new List<decimal>();
         static List<decimal> DelMaxE = new List<decimal>();
         static List<decimal> DelMinZ = new List<decimal>();
         static List<decimal> DelMaxZ = new List<decimal>();
-       
+        static string sPath = "";
+
 
 
         public Form1()
@@ -57,22 +58,36 @@ namespace Bachelorarbeit_NT
             InitializeComponent();   //Visual studio code
             button1.Enabled = true;             // aktiviert die Button 1 2 und 3 diese sind für das wechseln der Statistik verantwortlich. 
             button2.Enabled = true;
-            button3.Enabled = true;
-            DelLesen();
+            button3.Enabled = true;           
             var Start = new Starter(cpus, n, Convert.ToInt32(AnzahlIntervalle), GesamtIntervall, ctsrc.Token);   //hier wird die Starter Klasse aufgerufen
-            Delta = GesamtIntervall/Convert.ToDecimal(AnzahlIntervalle);
-            
+            Auslesen(Application.StartupPath);
+            Delta = GesamtIntervall / Convert.ToDecimal(AnzahlIntervalle);
+
         }
-        private void DelLesen() //MethodeZumAuslesenDerAbstandsfunktion
+        private void DelLesen(StringBuilder sbpath) //MethodeZumAuslesenDerAbstandsfunktion
         {
-            if (File.Exists("EulerMin.txt"))   //Die Gespeicherten Daten Auslesen.
+            var sbEulerMin = new StringBuilder(Convert.ToString(sbpath));           
+            var sbEulerMax = new StringBuilder(Convert.ToString(sbpath));
+            var sbZetaMin = new StringBuilder(Convert.ToString(sbpath));
+            var sbZetaMax = new StringBuilder(Convert.ToString(sbpath));
+            var sbRootMin = new StringBuilder(Convert.ToString(sbpath));
+            var sbRootMax = new StringBuilder(Convert.ToString(sbpath));
+            sbEulerMin.Append("EulerMin.txt");
+            sbEulerMax.Append("EulerMax.txt");
+            sbZetaMin.Append("Zeta3Min.txt");
+            sbZetaMax.Append("Zeta3Max.txt");
+            sbRootMax.Append("RootOfTwoMax.txt");
+            sbRootMin.Append("RootOfTwoMin.txt");
+            if (File.Exists(Convert.ToString(sbEulerMin)))   //Die Gespeicherten Daten Auslesen.
             {
 
 
                 string line;
-                string hile = "EulerMin.txt";
+                string hile = Convert.ToString(sbEulerMin);
                 StreamReader reader = new StreamReader(hile);
-
+                DelMinE.Clear();
+               
+              
                 line = reader.ReadLine();
                 while (line != null)  //Lese solange die Zeile nicht null ist, man weiß nicht wie Lang die Liste genau ist. Man könnte dies Zwar noch dazu speichern aber das wäre unnötig
                 {
@@ -82,12 +97,12 @@ namespace Bachelorarbeit_NT
                 reader.Close();
 
             }
-            if (File.Exists("EulerMax.txt"))   //Die Gespeicherten Daten Auslesen.
+            if (File.Exists(Convert.ToString(sbEulerMax)))   //Die Gespeicherten Daten Auslesen.
             {
-
+                DelMaxE.Clear();
 
                 string line;
-                string hile = "EulerMax.txt";
+                string hile = Convert.ToString(sbEulerMax);
                 StreamReader reader = new StreamReader(hile);
 
                 line = reader.ReadLine();
@@ -99,12 +114,12 @@ namespace Bachelorarbeit_NT
                 reader.Close();
 
             }
-            if (File.Exists("Zeta3Max.txt"))   //Die Gespeicherten Daten Auslesen.
+            if (File.Exists(Convert.ToString(sbZetaMax)))   //Die Gespeicherten Daten Auslesen.
             {
-
+                DelMaxZ.Clear();
 
                 string line;
-                string hile = "Zeta3Max.txt";
+                string hile = Convert.ToString(sbZetaMax);
                 StreamReader reader = new StreamReader(hile);
 
                 line = reader.ReadLine();
@@ -116,14 +131,14 @@ namespace Bachelorarbeit_NT
                 reader.Close();
 
             }
-            if (File.Exists("Zeta3Min.txt"))   //Die Gespeicherten Daten Auslesen.
+            if (File.Exists(Convert.ToString(sbZetaMin)))   //Die Gespeicherten Daten Auslesen.
             {
 
 
                 string line;
-                string hile = "Zeta3Min.txt";
+                string hile = Convert.ToString(sbZetaMin);
                 StreamReader reader = new StreamReader(hile);
-
+                DelMinZ.Clear();
                 line = reader.ReadLine();
                 while (line != null)  //Lese solange die Zeile nicht null ist, man weiß nicht wie Lang die Liste genau ist. Man könnte dies Zwar noch dazu speichern aber das wäre unnötig
                 {
@@ -133,12 +148,12 @@ namespace Bachelorarbeit_NT
                 reader.Close();
 
             }
-            if (File.Exists("RootOfTwoMin.txt"))   //Die Gespeicherten Daten Auslesen.
+            if (File.Exists(Convert.ToString(sbRootMin)))   //Die Gespeicherten Daten Auslesen.
             {
 
-
+                DelMinR.Clear();
                 string line;
-                string hile = "RootOfTwoMin.txt";
+                string hile = Convert.ToString(sbRootMin);
                 StreamReader reader = new StreamReader(hile);
 
                 line = reader.ReadLine();
@@ -150,12 +165,12 @@ namespace Bachelorarbeit_NT
                 reader.Close();
 
             }
-            if (File.Exists("RootOfTwoMax.txt"))   //Die Gespeicherten Daten Auslesen.
+            if (File.Exists(Convert.ToString(sbRootMax)))   //Die Gespeicherten Daten Auslesen.
             {
 
-
+                DelMaxR.Clear();
                 string line;
-                string hile = "RootOfTwoMax.txt";
+                string hile = Convert.ToString(sbRootMax);
                 StreamReader reader = new StreamReader(hile);
 
                 line = reader.ReadLine();
@@ -178,32 +193,31 @@ namespace Bachelorarbeit_NT
         {
 
         }
-        public static void save()
-        {
-            saved = true;  //Falls alles abgespeichert wurde
 
-        }
-        public static void Liste_RootOfTwo(List<ulong> Liste, decimal Minimum, decimal Maximum) 
+        public static void Liste_RootOfTwo(List<ulong> Liste, decimal Minimum, decimal Maximum)
         {
             minR = Minimum;   //gebe min und Max wieder
             maxR = Maximum;
             decimal tmp = 0.0M;
             ulong Zähle = 0;
-            if(DelMinR.Count()<1000)
+            DelMinR.Clear();
+            
+            
+            if (DelMinR.Count() < 1000)
             {
                 DelMinR.Add(minR);
                 DelMaxR.Add(maxR);
             }
             if (Wurzel2aufgerufen == false) //falls es das erste Mal aufgerufen wurde
             {
-
-                Wurzel2aufgerufen = true;                    
+               
+                Wurzel2aufgerufen = true;
                 for (int i = 0; i < Liste.Count(); i++)  //Die Liste Befüllen
                 {
-                    StatisticRootOfTwo.Add(Liste[i]);                    
+                    StatisticRootOfTwo.Add(Liste[i]);
                     Zähle = Zähle + Liste[i];
                 }
-                for(int i = 0;i<Liste.Count();i++)
+                for (int i = 0; i < Liste.Count(); i++)
                 {
                     if (Zähle != 0)
                     {
@@ -216,11 +230,11 @@ namespace Bachelorarbeit_NT
             {
                 for (int i = 0; i < Liste.Count(); i++)
                 {
-                    StatisticRootOfTwo[i] = Liste[i];                   
+                    StatisticRootOfTwo[i] = Liste[i];
                     Zähle = Zähle + Liste[i];
-                   
+
                 }
-                for(int i = 0; i < Liste.Count();i++)
+                for (int i = 0; i < Liste.Count(); i++)
                 {
                     if (Zähle != 0)
                     {
@@ -229,13 +243,13 @@ namespace Bachelorarbeit_NT
                     }
                 }
             }
-            
+
             uRootOfTwo = Zähle;
             meanR = tmp;
-            
+
 
             Console.WriteLine("RootOfTwo gesamt: {0}", Zähle);
-            Console.WriteLine("Mean RootOfTwo: {0}", meanR*Delta);
+            Console.WriteLine("Mean RootOfTwo: {0}", meanR * Delta);
 
         }
         public static void Liste_Euler(List<ulong> Liste, decimal Minimum, decimal Maximum)
@@ -260,7 +274,7 @@ namespace Bachelorarbeit_NT
                 }
                 for (int i = 0; i < Liste.Count(); i++)
                 {
-                    if(Zähle != 0)
+                    if (Zähle != 0)
                     {
                         propE.Add(Convert.ToDecimal(Liste[i]) / Convert.ToDecimal(Zähle));
                         tmp += Convert.ToDecimal(i) * propE[i];
@@ -287,14 +301,14 @@ namespace Bachelorarbeit_NT
             uEuler = Zähle;
             meanE = tmp;
             Console.WriteLine("Euler gesamt: {0}", Zähle);
-            Console.WriteLine("Mean Euler: {0}", meanE*Delta);
+            Console.WriteLine("Mean Euler: {0}", meanE * Delta);
         }
         public static void Liste_Zeta3(List<ulong> Liste, decimal Minimum, decimal Maximum)
         {
 
-            minZ = Minimum;  
+            minZ = Minimum;
             maxZ = Maximum;
-            decimal tmp=0;
+            decimal tmp = 0;
             ulong Zähle = 0;
             if (DelMinZ.Count() < 1000)
             {
@@ -338,7 +352,7 @@ namespace Bachelorarbeit_NT
             meanZ = tmp;
             uZeta3 = Zähle;
             Console.WriteLine("Zeta3 gesamt: {0}", Zähle);
-            Console.WriteLine("Mean Zeta3: {0}", meanZ*Delta);
+            Console.WriteLine("Mean Zeta3: {0}", meanZ * Delta);
         }
         private void Cancel()
         {
@@ -350,7 +364,7 @@ namespace Bachelorarbeit_NT
         }
         private void GraphAusgeben(decimal mean, string Name, List<ulong> statistic, ulong N, decimal max1, decimal min1)
         {
-            if (mean != 0)   
+            if (mean != 0)
             {
 
                 decimal max = 0;
@@ -375,7 +389,8 @@ namespace Bachelorarbeit_NT
                 series2.ChartType = SeriesChartType.FastLine;
                 series2.Name = "Exponentialverteilung";
                 chart1.Series.Add(series2);
-
+                chart1.ChartAreas[0].AxisY.Title = "Häufigkeit";
+                chart1.ChartAreas[0].AxisX.Title = "Größe des Abstands";
 
 
 
@@ -391,7 +406,7 @@ namespace Bachelorarbeit_NT
                     Summe2 += funktionswert;
                     chart1.Series[Name].Points.AddXY(Convert.ToDecimal(i) * Delta, statistic[i]);
                     max = Math.Max(statistic[i], max);
-                    
+
 
                 }
 
@@ -410,7 +425,7 @@ namespace Bachelorarbeit_NT
         {
             GraphAusgeben(meanR, "RootOfTwo", StatisticRootOfTwo, uRootOfTwo, maxR, minR);
 
-     
+
         }
         private decimal expver(decimal lam, decimal xwert)
         {
@@ -419,14 +434,14 @@ namespace Bachelorarbeit_NT
 
         private void button2_Click(object sender, EventArgs e)
         {
-            GraphAusgeben(meanZ, "Zeta3",StatisticZeta3, uZeta3, maxZ, minZ);
-          
+            GraphAusgeben(meanZ, "Zeta3", StatisticZeta3, uZeta3, maxZ, minZ);
+
         }
 
         private void button3_Click(object sender, EventArgs e)
         {
             GraphAusgeben(meanE, "Euler", StatisticEuler, uEuler, maxE, minE);
-           
+
         }
 
         private void Anzeige_Click(object sender, EventArgs e)
@@ -460,27 +475,27 @@ namespace Bachelorarbeit_NT
         /// <param name="e"></param>
         private void SaveButton_Click(object sender, EventArgs e)
         {
-            
-            
-                Stream myStream;
-                SaveFileDialog saveFileDialog1 = new SaveFileDialog();
 
-                saveFileDialog1.Filter = "txt files (*.txt)|*.txt|PNG files (*.png)|*.png|All files (*.*)|*.*";
-                saveFileDialog1.FilterIndex = 2;
-                saveFileDialog1.RestoreDirectory = true;
 
-            
-                if (saveFileDialog1.ShowDialog() == DialogResult.OK)
+            Stream myStream;
+            SaveFileDialog saveFileDialog1 = new SaveFileDialog();
+
+            saveFileDialog1.Filter = "txt files (*.txt)|*.txt|PNG files (*.png)|*.png|All files (*.*)|*.*";
+            saveFileDialog1.FilterIndex = 2;
+            saveFileDialog1.RestoreDirectory = true;
+
+
+            if (saveFileDialog1.ShowDialog() == DialogResult.OK)
+            {
+                if ((myStream = saveFileDialog1.OpenFile()) != null)
                 {
-                    if ((myStream = saveFileDialog1.OpenFile()) != null)
-                    {
 
-                        chart1.SaveImage(myStream, ChartImageFormat.Png); //speichere die Chart als png
-                        myStream.Close();
-                    }
+                    chart1.SaveImage(myStream, ChartImageFormat.Png); //speichere die Chart als png
+                    myStream.Close();
                 }
-            
-          
+            }
+
+
         }
 
         /// <summary>
@@ -529,14 +544,10 @@ namespace Bachelorarbeit_NT
             chart1.Annotations.Add(CAT32);
         }
 
-        private void bDelete_Click(object sender, EventArgs e)
-        {
-            delete = true;          //Das wird für das Beenden des Porgramms benötigt
-            this.Dispose();
-        }
+
 
         private void DelEuler_Click(object sender, EventArgs e)
-        {if (DelMaxE.Count != 0)
+        { if (DelMaxE.Count != 0)
             {
                 DeltaNMax(DelMaxE);
                 My_Text_Annotation(uEuler, maxE, minE);
@@ -545,20 +556,22 @@ namespace Bachelorarbeit_NT
         private void DeltaNMax(List<decimal> delMax)
         {
             if (delMax.Count != 0)
-            { 
-
-            chart1.Annotations.Clear();
-            chart1.Series.Clear();
-            Series smax = new Series();
-            smax.ChartType = SeriesChartType.FastLine;
-            smax.Name = "Max";
-            chart1.Series.Add(smax);
-            for (int i = 0; i < delMax.Count(); i++)
             {
-                chart1.Series["Max"].Points.AddXY(i * 100, delMax[i]);
+
+                chart1.Annotations.Clear();
+                chart1.Series.Clear();
+                Series smax = new Series();
+                smax.ChartType = SeriesChartType.FastLine;
+                smax.Name = "Max";
+                chart1.Series.Add(smax);
+                for (int i = 0; i < delMax.Count(); i++)
+                {
+                    chart1.Series["Max"].Points.AddXY(i * 100, delMax[i]);
+                }
+                chart1.ChartAreas[0].AxisY.Maximum = Convert.ToDouble(delMax[delMax.Count - 1]) * 1.10;
+                chart1.ChartAreas[0].AxisY.Title = "Größe des Abstands";
+                chart1.ChartAreas[0].AxisX.Title = "N";
             }
-            chart1.ChartAreas[0].AxisY.Maximum = Convert.ToDouble(delMax[delMax.Count - 1]) * 1.10;
-        }
         }
         private void DeltaNMin(List<decimal> delMin)
         {
@@ -575,6 +588,8 @@ namespace Bachelorarbeit_NT
                     chart1.Series["Min"].Points.AddXY(i * 100, delMin[i]);
                 }
                 chart1.ChartAreas[0].AxisY.Maximum = Convert.ToDouble(delMin[0]) * 1.10;
+                chart1.ChartAreas[0].AxisY.Title = "Größe des Abstands";
+                chart1.ChartAreas[0].AxisX.Title = "N";
             }
 
         }
@@ -615,11 +630,108 @@ namespace Bachelorarbeit_NT
         }
 
         private void bEMin_Click(object sender, EventArgs e)
-        {if (DelMinE.Count != 0)
+        { if (DelMinE.Count != 0)
             {
                 DeltaNMin(DelMinE);
                 My_Text_Annotation(uEuler, maxE, minE);
             }
         }
+
+        private void Verzeichnis_Click(object sender, EventArgs e)
+        {
+            FolderBrowserDialog browser = new FolderBrowserDialog();
+            string tempPath = "";
+
+            if (browser.ShowDialog() == DialogResult.OK)
+            {
+                tempPath = browser.SelectedPath;
+            }
+           
+            Auslesen(tempPath);
+        }
+        public async void Auslesen(string path)
+        {
+            var sb = new StringBuilder(path);
+            sb.Append("\\");
+            Console.WriteLine(sb);
+            
+            var sWurzel2 = new Thread(() => Statistic("RootOfTwo", sb)); //Hier wird per Lambda ein neuer Thread erstellt für die Statistik
+            sWurzel2.Start();           
+            var sEuler = new Thread(() => Statistic("Euler", sb));
+            sEuler.Start();            
+            var sZeta3 = new Thread(() => Statistic("Zeta3", sb));
+            sZeta3.Start();
+            var sLesen =new Thread(()=> DelLesen(sb));
+            sLesen.Start();
+        }
+        public async void Statistic(string Typ, StringBuilder sbpath)
+        {
+            string path = Convert.ToString(sbpath);
+            var sbMerken = new StringBuilder(path);
+            sbMerken.Append("Merken.txt");
+            var sbFertig = new StringBuilder(path);
+            sbFertig = new StringBuilder(path);
+            var sbStatistik = new StringBuilder(path);
+            sbStatistik.Append(Typ + "Statistik.txt");
+
+            List<ulong> Anzahl = new List<ulong>(); //Erstelle eine liste für die Statistik
+            decimal Maximum = 0; //setze den Maximalen Abstand auf 0 
+            decimal Minimum = 100; //setze den Minimalen Abstand auf 100 Das mache ich um die Werte einfacher zu aktualisieren. Denn hier sind die Funktionen monoton.
+            if (File.Exists(Convert.ToString(sbMerken)) || File.Exists(Convert.ToString(sbFertig))) //Wenn schonmal was berechnet wurde dann suche die Datei Statistik 
+            {
+                if (File.Exists(Convert.ToString(sbStatistik))) //Falls schonmal eine Statistik erstellt wurde führe diese Weiter.
+                {
+                    string hile = Convert.ToString(sbStatistik); //Lese aus der Datei die Werte
+                    StreamReader reader = new StreamReader(hile);
+                    Minimum = Convert.ToDecimal(reader.ReadLine());
+                    Maximum = Convert.ToDecimal(reader.ReadLine());
+                    for (ulong i = 0; i < AnzahlIntervalle; i++)  //befülle die Liste mit den Werten. Hier ist sicher, dass es immer AnzahlIntervall viele Einträge gibt.
+                    {
+                        Anzahl.Add(Convert.ToUInt64(reader.ReadLine()));
+                    }
+                    Anzahl.Add(Convert.ToUInt64(reader.ReadLine()));
+                    reader.Close();
+
+
+                }
+            }
+            else //Falls diese Dateien nicht existieren gibt es auch keine Statistik. Diese muss erstellt werden.
+            {
+                for (ulong i = 0; i < AnzahlIntervalle; i++)
+                {
+                    Anzahl.Add(0);                                  //Liste Erstellen für die Statistik.
+                }
+                Anzahl.Add(0);
+            }
+
+
+            switch (Typ)
+            {
+                case "RootOfTwo":
+                    Liste_RootOfTwo(Anzahl, Minimum, Maximum);
+
+                    break;
+
+
+                case "Zeta3":
+
+                    Liste_Zeta3(Anzahl, Minimum, Maximum);
+
+
+
+                    break;
+                case "Euler":
+                    Liste_Euler(Anzahl, Minimum, Maximum);
+
+
+
+                    break;
+                default: throw new ArgumentException(); //Falls es ein s gibt welches zu nichts passt
+            }
+
+
+
+        }
+
     }
 }
